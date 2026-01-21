@@ -47,6 +47,8 @@ import {
   PAGE_SIZE_OPTIONS,
   DEFAULT_PAGE_SIZE,
 } from "@/constants/hr.constants";
+import { useAuth } from "@/contexts/AuthContext";
+import { PermissionGuard } from "@/components/guards/PermissionGuard";
 
 const { Search } = Input;
 

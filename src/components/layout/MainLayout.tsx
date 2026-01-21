@@ -22,7 +22,13 @@ import {
   UserOutlined,
   SettingOutlined,
   LogoutOutlined,
+  CustomerServiceOutlined,
+  SafetyOutlined,
+  FileTextOutlined,
+  CrownOutlined,
 } from "@ant-design/icons";
+import { useAuth } from "../../contexts/AuthContext";
+import { PermissionGuard } from "../guards/PermissionGuard";
 
 const { Header, Sider, Content } = Layout;
 
@@ -31,32 +37,103 @@ const MainLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { token } = theme.useToken();
+  const { user, logout, hasAnyPermission } = useAuth();
 
-  // Menu items
-  const menuItems: MenuProps["items"] = [
-    {
-      key: "/hr/dashboard",
-      icon: <DashboardOutlined />,
-      label: "Dashboard",
-    },
-    {
-      key: "/hr/employees",
-      icon: <TeamOutlined />,
-      label: "Quản lý nhân viên",
-    },
-    {
-      key: "/hr/departments",
-      icon: <ApartmentOutlined />,
-      label: "Quản lý phòng ban",
-    },
-    {
-      key: "/hr/positions",
-      icon: <IdcardOutlined />,
-      label: "Quản lý chức vụ",
-    },
-  ];
+  // Build menu items based on permissions
+  const getMenuItems = (): MenuProps["items"] => {
+    const items: MenuProps["items"] = [];
+
+    // Admin menu
+    if (hasAnyPermission(["admin:view_all_data", "admin:view_audit_log"])) {
+      items.push({
+        key: "admin",
+        icon: <CrownOutlined />,
+        label: "Admin",
+        children: [
+          hasAnyPermission(["admin:view_all_data"]) && {
+            key: "/admin/overview",
+            icon: <DashboardOutlined />,
+            label: "Tổng quan",
+          },
+          hasAnyPermission(["admin:view_audit_log"]) && {
+            key: "/admin/audit-log",
+            icon: <FileTextOutlined />,
+            label: "Audit Log",
+          },
+        ].filter(Boolean),
+      });
+    }
+
+    // CRM menu
+    if (
+      hasAnyPermission([
+        "crm:view_all_customers",
+        "crm:view_own_customers",
+      ])
+    ) {
+      items.push({
+        key: "crm",
+        icon: <CustomerServiceOutlined />,
+        label: "CRM",
+        children: [
+          {
+            key: "/crm/customers",
+            icon: <TeamOutlined />,
+            label: "Khách hàng",
+          },
+        ],
+      });
+    }
+
+    // HR menu
+    if (
+      hasAnyPermission([
+        "hr:view_all_employees",
+        "hr:view_department_employees",
+      ])
+    ) {
+      items.push({
+        key: "hr",
+        icon: <SafetyOutlined />,
+        label: "HR",
+        children: [
+          {
+            key: "/hr/dashboard",
+            icon: <DashboardOutlined />,
+            label: "Dashboard",
+          },
+          {
+            key: "/hr/employees",
+            icon: <TeamOutlined />,
+            label: "Nhân viên",
+          },
+          {
+            key: "/hr/departments",
+            icon: <ApartmentOutlined />,
+            label: "Phòng ban",
+          },
+          {
+            key: "/hr/positions",
+            icon: <IdcardOutlined />,
+            label: "Chức vụ",
+          },
+        ],
+      });
+    }
+
+    return items;
+  };
+
+  const menuItems = getMenuItems();
 
   // User dropdown menu
+  const handleMenuClick: MenuProps["onClick"] = ({ key }) => {
+    if (key === "logout") {
+      logout();
+      navigate("/login");
+    }
+  };
+
   const userMenuItems: MenuProps["items"] = [
     {
       key: "profile",
@@ -76,6 +153,7 @@ const MainLayout = () => {
       icon: <LogoutOutlined />,
       label: "Đăng xuất",
       danger: true,
+      onClick: handleMenuClick,
     },
   ];
 
@@ -96,10 +174,15 @@ const MainLayout = () => {
       let title = snippet;
 
       // Convert to Vietnamese
-      if (snippet === "hr") title = "Nhân sự";
-      else if (snippet === "employees") title = "Quản lý nhân viên";
-      else if (snippet === "departments") title = "Quản lý phòng ban";
-      else if (snippet === "positions") title = "Quản lý chức vụ";
+      if (snippet === "admin") title = "Quản trị";
+      else if (snippet === "overview") title = "Tổng quan";
+      else if (snippet === "audit-log") title = "Nhật ký";
+      else if (snippet === "crm") title = "CRM";
+      else if (snippet === "customers") title = "Khách hàng";
+      else if (snippet === "hr") title = "Nhân sự";
+      else if (snippet === "employees") title = "Nhân viên";
+      else if (snippet === "departments") title = "Phòng ban";
+      else if (snippet === "positions") title = "Chức vụ";
       else if (snippet === "dashboard") title = "Dashboard";
       else if (snippet === "new") title = "Thêm mới";
 
@@ -143,7 +226,7 @@ const MainLayout = () => {
             borderBottom: `1px solid ${token.colorBorder}`,
           }}
         >
-          {collapsed ? "HR" : "HR System"}
+          {collapsed ? "🏢" : "🏢 CRM + HR"}
         </div>
         <Menu
           theme="dark"
@@ -193,7 +276,7 @@ const MainLayout = () => {
             </Badge>
 
             {/* User Avatar & Dropdown */}
-            <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
+            <Dropdown menu={{ items: userMenuItems, onClick: handleMenuClick }} placement="bottomRight">
               <div
                 style={{
                   display: "flex",
@@ -202,14 +285,38 @@ const MainLayout = () => {
                   cursor: "pointer",
                   padding: "4px 8px",
                   borderRadius: 4,
+                  transition: "background 0.3s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = token.colorBgTextHover;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
                 }}
               >
                 <Avatar
                   size="default"
                   style={{ backgroundColor: token.colorPrimary }}
-                  icon={<UserOutlined />}
-                />
-                <span style={{ fontWeight: 500 }}>Admin</span>
+                >
+                  {user?.fullName?.charAt(0) || "U"}
+                </Avatar>
+                <div style={{ 
+                  display: "flex", 
+                  flexDirection: "column", 
+                  alignItems: "flex-start",
+                  lineHeight: 1.2,
+                }}>
+                  <span style={{ fontWeight: 500, fontSize: 14, color: token.colorText }}>
+                    {user?.fullName || "User"}
+                  </span>
+                  <span style={{ 
+                    fontSize: 12, 
+                    color: token.colorTextSecondary, 
+                    textTransform: "capitalize" 
+                  }}>
+                    {user?.role?.replace("_", " ") || "User"}
+                  </span>
+                </div>
               </div>
             </Dropdown>
           </div>

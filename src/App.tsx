@@ -3,12 +3,28 @@ import { ConfigProvider } from "antd";
 import viVN from "antd/locale/vi_VN";
 import dayjs from "dayjs";
 import "dayjs/locale/vi";
+import { AuthProvider } from "./contexts/AuthContext";
+import { ProtectedRoute } from "./components/guards/ProtectedRoute";
 import MainLayout from "./components/layout/MainLayout";
+
+// Auth Pages
+import { LoginPage } from "./pages/auth/LoginPage";
+import { AccessDeniedPage } from "./pages/auth/AccessDeniedPage";
+
+// HR Pages
 import Dashboard from "./pages/hr/Dashboard";
 import EmployeeList from "./pages/hr/EmployeeList";
 import EmployeeDetail from "./pages/hr/EmployeeDetail";
 import DepartmentList from "./pages/hr/DepartmentList";
 import PositionList from "./pages/hr/PositionList";
+
+// CRM Pages
+import { CustomerList } from "./pages/crm/CustomerList";
+import { CustomerDetail } from "./pages/crm/CustomerDetail";
+
+// Admin Pages
+import { AdminOverview } from "./pages/admin/AdminOverview";
+import { AuditLogPage } from "./pages/admin/AuditLogPage";
 
 // Set dayjs locale to Vietnamese
 dayjs.locale("vi");
@@ -25,32 +41,118 @@ function App() {
       }}
     >
       <BrowserRouter>
-        <Routes>
-          {/* Redirect root to dashboard */}
-          <Route path="/" element={<Navigate to="/hr/dashboard" replace />} />
-          
-          {/* HR Module Routes */}
-          <Route path="/hr" element={<MainLayout />}>
-            {/* Redirect /hr to /hr/dashboard */}
-            <Route index element={<Navigate to="/hr/dashboard" replace />} />
-            
-            {/* Dashboard */}
-            <Route path="dashboard" element={<Dashboard />} />
-            
-            {/* Employee Routes */}
-            <Route path="employees" element={<EmployeeList />} />
-            <Route path="employees/:id" element={<EmployeeDetail />} />
-            
-            {/* Department Routes */}
-            <Route path="departments" element={<DepartmentList />} />
-            
-            {/* Position Routes */}
-            <Route path="positions" element={<PositionList />} />
-          </Route>
+        <AuthProvider>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/access-denied" element={<AccessDeniedPage />} />
 
-          {/* 404 Not Found */}
-          <Route path="*" element={<Navigate to="/hr/dashboard" replace />} />
-        </Routes>
+            {/* Protected Routes */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <MainLayout />
+                </ProtectedRoute>
+              }
+            >
+              {/* Redirect root to appropriate dashboard based on role */}
+              <Route index element={<Navigate to="/admin/overview" replace />} />
+
+              {/* Admin Routes */}
+              <Route
+                path="admin/overview"
+                element={
+                  <ProtectedRoute requiredPermissions={["admin:view_all_data"]}>
+                    <AdminOverview />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="admin/audit-log"
+                element={
+                  <ProtectedRoute requiredPermissions={["admin:view_audit_log"]}>
+                    <AuditLogPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* CRM Routes */}
+              <Route
+                path="crm/customers"
+                element={
+                  <ProtectedRoute
+                    requiredPermissions={["crm:view_all_customers", "crm:view_own_customers"]}
+                    requireAll={false}
+                  >
+                    <CustomerList />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="crm/customers/:id"
+                element={
+                  <ProtectedRoute
+                    requiredPermissions={["crm:view_all_customers", "crm:view_own_customers"]}
+                    requireAll={false}
+                  >
+                    <CustomerDetail />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* HR Routes */}
+              <Route path="hr/dashboard" element={<Dashboard />} />
+              <Route
+                path="hr/employees"
+                element={
+                  <ProtectedRoute
+                    requiredPermissions={["hr:view_all_employees", "hr:view_department_employees"]}
+                    requireAll={false}
+                  >
+                    <EmployeeList />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="hr/employees/:id"
+                element={
+                  <ProtectedRoute
+                    requiredPermissions={["hr:view_all_employees", "hr:view_department_employees"]}
+                    requireAll={false}
+                  >
+                    <EmployeeDetail />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="hr/departments"
+                element={
+                  <ProtectedRoute
+                    requiredPermissions={["hr:view_all_employees", "hr:view_department_employees"]}
+                    requireAll={false}
+                  >
+                    <DepartmentList />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="hr/positions"
+                element={
+                  <ProtectedRoute
+                    requiredPermissions={["hr:view_all_employees", "hr:view_department_employees"]}
+                    requireAll={false}
+                  >
+                    <PositionList />
+                  </ProtectedRoute>
+                }
+              />
+            </Route>
+
+            {/* 404 Not Found */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </ConfigProvider>
   );
