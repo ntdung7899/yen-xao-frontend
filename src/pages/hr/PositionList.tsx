@@ -42,7 +42,7 @@ const PositionList = () => {
     reset,
     formState: { errors },
   } = useForm<PositionFormData>({
-    resolver: yupResolver(positionSchema),
+    resolver: yupResolver(positionSchema) as any,
   });
 
   // Filter positions

@@ -30,7 +30,6 @@ import {
   DollarOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../../contexts/AuthContext";
-import { PermissionGuard } from "../guards/PermissionGuard";
 
 const { Header, Sider, Content } = Layout;
 
@@ -185,8 +184,7 @@ const MainLayout = () => {
       },
     ];
 
-    pathSnippets.forEach((snippet, index) => {
-      const url = `/${pathSnippets.slice(0, index + 1).join("/")}`;
+    pathSnippets.forEach((snippet) => {
       let title = snippet;
 
       // Convert to Vietnamese

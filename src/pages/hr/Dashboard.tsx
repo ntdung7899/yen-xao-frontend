@@ -25,7 +25,6 @@ import {
 import {
   mockEmployees,
   mockDepartments,
-  getDepartmentById,
   getEmployeesByDepartment,
 } from "@/data/mockData";
 import { formatCurrency } from "@/utils/formatters";

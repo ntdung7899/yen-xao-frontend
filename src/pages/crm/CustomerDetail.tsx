@@ -247,7 +247,7 @@ export const CustomerDetail: React.FC = () => {
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: 13, color: '#8c8c8c', marginBottom: 8 }}>Cập nhật lần cuối</div>
                 <div style={{ fontSize: 16, fontWeight: 500, color: '#fa8c16' }}>
-                  {new Date(customer.lastContactDate).toLocaleDateString('vi-VN', {
+                  {new Date(customer.updatedAt).toLocaleDateString('vi-VN', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',

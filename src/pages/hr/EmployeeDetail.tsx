@@ -22,7 +22,6 @@ import {
   UserOutlined,
   PhoneOutlined,
   MailOutlined,
-  HomeOutlined,
 } from "@ant-design/icons";
 import { Employee } from "@/types/hr.types";
 import {

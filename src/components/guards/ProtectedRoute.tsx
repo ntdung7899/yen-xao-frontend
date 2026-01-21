@@ -20,16 +20,16 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/login" replace />;
   }
 
-  // TODO: Uncomment to enable permission check
-  // if (requiredPermissions.length > 0) {
-  //   const hasAccess = requireAll
-  //     ? hasAllPermissions(requiredPermissions)
-  //     : hasAnyPermission(requiredPermissions);
+  // Check permissions if required
+  if (requiredPermissions.length > 0) {
+    const hasAccess = requireAll
+      ? hasAllPermissions(requiredPermissions)
+      : hasAnyPermission(requiredPermissions);
 
-  //   if (!hasAccess) {
-  //     return <Navigate to="/access-denied" replace />;
-  //   }
-  // }
+    if (!hasAccess) {
+      return <Navigate to="/access-denied" replace />;
+    }
+  }
 
   return <>{children}</>;
 };

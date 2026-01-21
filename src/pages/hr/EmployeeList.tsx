@@ -47,15 +47,13 @@ import {
   PAGE_SIZE_OPTIONS,
   DEFAULT_PAGE_SIZE,
 } from "@/constants/hr.constants";
-import { useAuth } from "@/contexts/AuthContext";
-import { PermissionGuard } from "@/components/guards/PermissionGuard";
 
 const { Search } = Input;
 
 const EmployeeList = () => {
   const navigate = useNavigate();
   const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
   const [selectedPositions, setSelectedPositions] = useState<string[]>([]);
@@ -133,7 +131,7 @@ const EmployeeList = () => {
       width: 200,
       fixed: "left",
       sorter: (a, b) => a.fullName.localeCompare(b.fullName),
-      render: (text: string, record: Employee) => (
+      render: (text: string) => (
         <Space>
           <Avatar
             size="small"

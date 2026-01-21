@@ -49,7 +49,7 @@ const DepartmentList = () => {
     reset,
     formState: { errors },
   } = useForm<DepartmentFormData>({
-    resolver: yupResolver(departmentSchema),
+    resolver: yupResolver(departmentSchema) as any,
   });
 
   // Filter departments
