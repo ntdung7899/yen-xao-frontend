@@ -26,6 +26,8 @@ import {
   SafetyOutlined,
   FileTextOutlined,
   CrownOutlined,
+  ClockCircleOutlined,
+  DollarOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../../contexts/AuthContext";
 import { PermissionGuard } from "../guards/PermissionGuard";
@@ -60,7 +62,7 @@ const MainLayout = () => {
             icon: <FileTextOutlined />,
             label: "Audit Log",
           },
-        ].filter(Boolean),
+        ].filter(Boolean) as MenuProps["items"],
       });
     }
 
@@ -94,30 +96,44 @@ const MainLayout = () => {
     ) {
       items.push({
         key: "hr",
-        icon: <SafetyOutlined />,
+        icon: <SafetyOutlined />, 
         label: "HR",
         children: [
           {
             key: "/hr/dashboard",
-            icon: <DashboardOutlined />,
+            icon: <DashboardOutlined />, 
             label: "Dashboard",
           },
           {
             key: "/hr/employees",
-            icon: <TeamOutlined />,
+            icon: <TeamOutlined />, 
             label: "Nhân viên",
           },
           {
             key: "/hr/departments",
-            icon: <ApartmentOutlined />,
+            icon: <ApartmentOutlined />, 
             label: "Phòng ban",
           },
           {
             key: "/hr/positions",
-            icon: <IdcardOutlined />,
+            icon: <IdcardOutlined />, 
             label: "Chức vụ",
           },
-        ],
+          hasAnyPermission(["hr:view_salary", "hr:view_own_salary"]) && {
+            key: "/hr/salaries",
+            icon: <DollarOutlined />,
+            label: "Lương",
+          },
+        ].filter(Boolean) as MenuProps["items"],
+      });
+    }
+
+    // Attendance menu
+    if (hasAnyPermission(["attendance:checkin", "attendance:view_own"])) {
+      items.push({
+        key: "/hr/attendance",
+        icon: <ClockCircleOutlined />,
+        label: "Chấm công",
       });
     }
 
@@ -183,6 +199,7 @@ const MainLayout = () => {
       else if (snippet === "employees") title = "Nhân viên";
       else if (snippet === "departments") title = "Phòng ban";
       else if (snippet === "positions") title = "Chức vụ";
+      else if (snippet === "salaries") title = "Lương";
       else if (snippet === "dashboard") title = "Dashboard";
       else if (snippet === "new") title = "Thêm mới";
 

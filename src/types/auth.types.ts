@@ -2,7 +2,7 @@
 
 export type Role = 'admin' | 'hr_manager' | 'crm_manager' | 'sale' | 'hr_staff';
 
-export type Permission = 
+export type Permission =
   // CRM Permissions
   | 'crm:view_all_customers'
   | 'crm:view_own_customers'
@@ -18,7 +18,17 @@ export type Permission =
   | 'hr:edit_employee'
   | 'hr:delete_employee'
   | 'hr:view_salary'
+  | 'hr:view_own_salary'
   | 'hr:edit_salary'
+  // Attendance Permissions
+  | 'attendance:checkin'
+  | 'attendance:checkout'
+  | 'attendance:view_own'
+  | 'attendance:view_team'
+  | 'attendance:view_department'
+  | 'attendance:view_all'
+  | 'attendance:approve'
+  | 'attendance:edit'
   // Admin Permissions
   | 'admin:view_audit_log'
   | 'admin:manage_users'

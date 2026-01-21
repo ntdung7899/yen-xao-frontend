@@ -17,6 +17,8 @@ import EmployeeList from "./pages/hr/EmployeeList";
 import EmployeeDetail from "./pages/hr/EmployeeDetail";
 import DepartmentList from "./pages/hr/DepartmentList";
 import PositionList from "./pages/hr/PositionList";
+import AttendancePage from "./pages/hr/AttendancePage";
+import SalariesPage from "./pages/hr/SalariesPage";
 
 // CRM Pages
 import { CustomerList } from "./pages/crm/CustomerList";
@@ -104,6 +106,17 @@ function App() {
               {/* HR Routes */}
               <Route path="hr/dashboard" element={<Dashboard />} />
               <Route
+                path="hr/attendance"
+                element={
+                  <ProtectedRoute
+                    requiredPermissions={["attendance:checkin", "attendance:view_own"]}
+                    requireAll={false}
+                  >
+                    <AttendancePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="hr/employees"
                 element={
                   <ProtectedRoute
@@ -144,6 +157,17 @@ function App() {
                     requireAll={false}
                   >
                     <PositionList />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="hr/salaries"
+                element={
+                  <ProtectedRoute
+                    requiredPermissions={["hr:view_salary", "hr:view_own_salary"]}
+                    requireAll={false}
+                  >
+                    <SalariesPage />
                   </ProtectedRoute>
                 }
               />

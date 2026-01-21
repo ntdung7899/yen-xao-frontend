@@ -1,23 +1,25 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Form, Input, Button, Card, Alert, Space, Tag, Divider, Collapse, Typography } from 'antd';
+import { UserOutlined, LockOutlined, CrownOutlined, TeamOutlined, ShoppingOutlined, SafetyOutlined, FileTextOutlined } from '@ant-design/icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { TEST_CREDENTIALS } from '../../data/mockAuthData';
+
+const { Title, Paragraph, Text } = Typography;
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [form] = Form.useForm();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = (values: { username: string; password: string }) => {
     setError('');
     setLoading(true);
 
     setTimeout(() => {
-      const success = login(username, password);
+      const success = login(values.username, values.password);
       if (success) {
         navigate('/');
       } else {
@@ -29,124 +31,179 @@ export const LoginPage: React.FC = () => {
 
   const quickLogin = (role: keyof typeof TEST_CREDENTIALS) => {
     const cred = TEST_CREDENTIALS[role];
-    setUsername(cred.username);
-    setPassword(cred.password);
+    form.setFieldsValue({
+      username: cred.username,
+      password: cred.password,
+    });
+  };
+
+  const getRoleIcon = (role: string) => {
+    const icons: Record<string, React.ReactNode> = {
+      admin: <CrownOutlined />,
+      crm_manager: <TeamOutlined />,
+      sale: <ShoppingOutlined />,
+      hr_manager: <SafetyOutlined />,
+      hr_staff: <FileTextOutlined />,
+    };
+    return icons[role] || <UserOutlined />;
+  };
+
+  const getRoleColor = (role: string) => {
+    const colors: Record<string, string> = {
+      admin: 'purple',
+      crm_manager: 'blue',
+      sale: 'green',
+      hr_manager: 'orange',
+      hr_staff: 'magenta',
+    };
+    return colors[role] || 'default';
+  };
+
+  const getRoleName = (role: string) => {
+    const names: Record<string, string> = {
+      admin: 'Admin',
+      crm_manager: 'CRM Manager',
+      sale: 'Sale',
+      hr_manager: 'HR Manager',
+      hr_staff: 'HR Staff',
+    };
+    return names[role] || role;
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
+    <div
+      style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px',
+      }}
+    >
+      <Card
+        style={{
+          maxWidth: 450,
+          width: '100%',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+          borderRadius: 16,
+        }}
+      >
         {/* Logo & Title */}
-        <div className="text-center mb-8">
-          <div className="text-6xl mb-4">🏢</div>
-          <h1 className="text-3xl font-bold text-gray-800">CRM + HR System</h1>
-          <p className="text-gray-600 mt-2">Đăng nhập để tiếp tục</p>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div style={{ fontSize: 64, marginBottom: 16 }}>🏢</div>
+          <Title level={2} style={{ marginBottom: 8 }}>
+            CRM + HR System
+          </Title>
+          <Paragraph type="secondary">Đăng nhập để tiếp tục</Paragraph>
         </div>
 
         {/* Login Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <form onSubmit={handleLogin} className="space-y-6">
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
-                🚫 {error}
-              </div>
-            )}
+        <Form
+          form={form}
+          name="login"
+          onFinish={handleLogin}
+          layout="vertical"
+          size="large"
+          autoComplete="off"
+        >
+          {error && (
+            <Alert
+              message={error}
+              type="error"
+              showIcon
+              closable
+              onClose={() => setError('')}
+              style={{ marginBottom: 24 }}
+            />
+          )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Tên đăng nhập</label>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Nhập tên đăng nhập"
-                required
-              />
-            </div>
+          <Form.Item
+            name="username"
+            label="Tên đăng nhập"
+            rules={[{ required: true, message: 'Vui lòng nhập tên đăng nhập!' }]}
+          >
+            <Input prefix={<UserOutlined />} placeholder="Nhập tên đăng nhập" />
+          </Form.Item>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Mật khẩu</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Nhập mật khẩu"
-                required
-              />
-            </div>
+          <Form.Item
+            name="password"
+            label="Mật khẩu"
+            rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }]}
+          >
+            <Input.Password prefix={<LockOutlined />} placeholder="Nhập mật khẩu" />
+          </Form.Item>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {loading ? '🔄 Đang đăng nhập...' : '🔐 Đăng nhập'}
-            </button>
-          </form>
+          <Form.Item>
+            <Button type="primary" htmlType="submit" loading={loading} block size="large">
+              {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+            </Button>
+          </Form.Item>
+        </Form>
 
-          {/* Demo Accounts */}
-          <div className="mt-8 pt-8 border-t border-gray-200">
-            <p className="text-sm font-medium text-gray-700 mb-4 text-center">
-              📝 Tài khoản demo (Click để điền nhanh):
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => quickLogin('admin')}
-                className="px-4 py-2 bg-purple-100 text-purple-800 rounded-lg hover:bg-purple-200 text-sm font-medium transition-colors"
-              >
-                👑 Admin
-              </button>
-              <button
-                onClick={() => quickLogin('crm_manager')}
-                className="px-4 py-2 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 text-sm font-medium transition-colors"
-              >
-                👔 CRM Manager
-              </button>
-              <button
-                onClick={() => quickLogin('sale')}
-                className="px-4 py-2 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 text-sm font-medium transition-colors"
-              >
-                💼 Sale
-              </button>
-              <button
-                onClick={() => quickLogin('hr_manager')}
-                className="px-4 py-2 bg-orange-100 text-orange-800 rounded-lg hover:bg-orange-200 text-sm font-medium transition-colors"
-              >
-                🧑‍💼 HR Manager
-              </button>
-              <button
-                onClick={() => quickLogin('hr_staff')}
-                className="px-4 py-2 bg-pink-100 text-pink-800 rounded-lg hover:bg-pink-200 text-sm font-medium col-span-2 transition-colors"
-              >
-                📋 HR Staff
-              </button>
-            </div>
-          </div>
+        <Divider>Tài khoản demo</Divider>
 
-          {/* Test Credentials Table */}
-          <div className="mt-6">
-            <details className="text-sm">
-              <summary className="cursor-pointer text-gray-600 hover:text-gray-800 font-medium">
-                Xem thông tin đăng nhập
-              </summary>
-              <div className="mt-3 bg-gray-50 rounded-lg p-4 space-y-2">
-                {Object.entries(TEST_CREDENTIALS).map(([role, cred]) => (
-                  <div key={role} className="flex justify-between text-xs">
-                    <span className="font-mono font-medium">{cred.username}</span>
-                    <span className="font-mono text-gray-600">{cred.password}</span>
-                  </div>
-                ))}
-              </div>
-            </details>
-          </div>
+        {/* Demo Accounts */}
+        <div style={{ marginBottom: 16 }}>
+          <Paragraph type="secondary" style={{ marginBottom: 16, textAlign: 'center', fontSize: 13 }}>
+            Click vào role để điền nhanh thông tin đăng nhập
+          </Paragraph>
+          <Space wrap style={{ width: '100%', justifyContent: 'center' }}>
+            {Object.keys(TEST_CREDENTIALS).map((role) => (
+              <Tag
+                key={role}
+                icon={getRoleIcon(role)}
+                color={getRoleColor(role)}
+                style={{ 
+                  cursor: 'pointer', 
+                  padding: '6px 12px', 
+                  fontSize: 13,
+                  fontWeight: 500,
+                }}
+                onClick={() => quickLogin(role as keyof typeof TEST_CREDENTIALS)}
+              >
+                {getRoleName(role)}
+              </Tag>
+            ))}
+          </Space>
         </div>
+
+        {/* Test Credentials */}
+        <Collapse
+          ghost
+          size="small"
+          items={[
+            {
+              key: '1',
+              label: <Text type="secondary" style={{ fontSize: 13 }}>Xem thông tin đăng nhập</Text>,
+              children: (
+                <div style={{ background: '#fafafa', padding: 12, borderRadius: 8 }}>
+                  {Object.entries(TEST_CREDENTIALS).map(([role, cred]) => (
+                    <div
+                      key={role}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        padding: '6px 0',
+                        fontSize: 12,
+                        fontFamily: 'monospace',
+                      }}
+                    >
+                      <Text strong>{cred.username}</Text>
+                      <Text type="secondary">{cred.password}</Text>
+                    </div>
+                  ))}
+                </div>
+              ),
+            },
+          ]}
+        />
 
         {/* Footer */}
-        <div className="text-center mt-6 text-gray-600 text-sm">
-          <p>© 2026 CRM + HR System • Mock Data Only</p>
+        <div style={{ textAlign: 'center', marginTop: 24, color: '#8c8c8c', fontSize: 12 }}>
+          © 2026 CRM + HR System • Mock Data Only
         </div>
-      </div>
+      </Card>
     </div>
   );
 };
