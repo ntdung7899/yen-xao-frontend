@@ -104,6 +104,11 @@ const MainLayout = () => {
         icon: <CustomerServiceOutlined />,
         label: "CRM",
         children: [
+          hasAnyPermission(["crm:view_all_customers"]) && {
+            key: "/crm/dashboard",
+            icon: <DashboardOutlined />,
+            label: "Dashboard",
+          },
           {
             key: "/crm/customers",
             icon: <TeamOutlined />,
@@ -114,7 +119,7 @@ const MainLayout = () => {
             icon: <CalendarOutlined />,
             label: "Lịch làm việc",
           },
-        ],
+        ].filter(Boolean) as MenuProps["items"],
       });
     }
 

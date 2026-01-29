@@ -30,7 +30,7 @@ import {
   RiseOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../../contexts/AuthContext';
-import { mockCustomers, mockUsers, mockTeams } from '../../data/mockAuthData';
+import { mockCustomers, mockUsers, mockTeams, mockDepartments } from '../../data/mockAuthData';
 import { Customer } from '../../types/crm.types';
 import { PermissionGuard } from '../../components/guards/PermissionGuard';
 
@@ -43,6 +43,7 @@ export const CustomerList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [departmentFilter, setDepartmentFilter] = useState<string>('all');
 
   // Transfer Logic State
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
@@ -89,8 +90,16 @@ export const CustomerList: React.FC = () => {
       filtered = filtered.filter((c) => c.priority === priorityFilter);
     }
 
+    // Department filter
+    if (departmentFilter !== 'all') {
+      filtered = filtered.filter(c => {
+        const assignee = mockUsers.find(u => u.id === c.assignedTo);
+        return assignee?.departmentId === departmentFilter;
+      });
+    }
+
     return filtered;
-  }, [customers, user, searchTerm, statusFilter, priorityFilter, hasPermission]);
+  }, [customers, user, searchTerm, statusFilter, priorityFilter, departmentFilter, hasPermission]);
 
   // Group users by team for the transfer select
   const usersByTeam = useMemo(() => {
@@ -391,6 +400,20 @@ export const CustomerList: React.FC = () => {
               ]}
             />
           </Col>
+          {hasPermission('crm:view_all_customers') && (
+            <Col xs={24} sm={12} md={5}>
+              <Select
+                style={{ width: '100%' }}
+                placeholder="Phòng ban"
+                value={departmentFilter}
+                onChange={setDepartmentFilter}
+                options={[
+                  { label: 'Tất cả phòng ban', value: 'all' },
+                  ...mockDepartments.map(d => ({ label: d.name, value: d.id }))
+                ]}
+              />
+            </Col>
+          )}
           <Col xs={24} sm={24} md={6}>
             <PermissionGuard requiredPermissions={['crm:create_customer']}>
               <Button type="primary" icon={<PlusOutlined />} block>

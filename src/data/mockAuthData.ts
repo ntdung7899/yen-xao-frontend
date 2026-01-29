@@ -45,6 +45,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'attendance:view_team',
     'attendance:view_department',
     'attendance:approve',
+    'admin:view_audit_log',
   ],
   sale: [
     'crm:view_own_customers',
@@ -68,6 +69,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'attendance:view_all',
     'attendance:approve',
     'attendance:edit',
+    'admin:view_audit_log',
   ],
   hr_staff: [
     'hr:view_department_employees',

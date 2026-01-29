@@ -26,6 +26,7 @@ import LeaveRequestList from "./pages/hr/LeaveRequestList";
 import { CustomerList } from "./pages/crm/CustomerList";
 import { CustomerDetail } from "./pages/crm/CustomerDetail";
 import WorkSchedule from "./pages/crm/WorkSchedule";
+import CRMDashboard from "./pages/crm/Dashboard";
 
 // Admin Pages
 import { AdminOverview } from "./pages/admin/AdminOverview";
@@ -137,6 +138,16 @@ function App() {
               />
 
               {/* CRM Routes */}
+              <Route
+                path="crm/dashboard"
+                element={
+                  <ProtectedRoute
+                    requiredPermissions={["crm:view_all_customers"]}
+                  >
+                    <CRMDashboard />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="crm/customers"
                 element={
