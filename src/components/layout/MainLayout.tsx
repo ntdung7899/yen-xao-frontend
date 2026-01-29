@@ -35,6 +35,7 @@ const { Header, Sider, Content } = Layout;
 
 const MainLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
+  const [isEcommerceMode, setIsEcommerceMode] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { token } = theme.useToken();
@@ -42,6 +43,26 @@ const MainLayout = () => {
 
   // Build menu items based on permissions
   const getMenuItems = (): MenuProps["items"] => {
+    if (isEcommerceMode) {
+      return [
+        {
+          key: "/ecommerce/banners",
+          icon: <FileTextOutlined />,
+          label: "Banner",
+        },
+        {
+          key: "/ecommerce/products",
+          icon: <DollarOutlined />,
+          label: "Sản phẩm",
+        },
+        {
+          key: "/ecommerce/news",
+          icon: <FileTextOutlined />,
+          label: "Tin tức",
+        },
+      ];
+    }
+
     const items: MenuProps["items"] = [];
 
     // Admin menu
@@ -95,27 +116,27 @@ const MainLayout = () => {
     ) {
       items.push({
         key: "hr",
-        icon: <SafetyOutlined />, 
+        icon: <SafetyOutlined />,
         label: "HR",
         children: [
           {
             key: "/hr/dashboard",
-            icon: <DashboardOutlined />, 
+            icon: <DashboardOutlined />,
             label: "Dashboard",
           },
           {
             key: "/hr/employees",
-            icon: <TeamOutlined />, 
+            icon: <TeamOutlined />,
             label: "Nhân viên",
           },
           {
             key: "/hr/departments",
-            icon: <ApartmentOutlined />, 
+            icon: <ApartmentOutlined />,
             label: "Phòng ban",
           },
           {
             key: "/hr/positions",
-            icon: <IdcardOutlined />, 
+            icon: <IdcardOutlined />,
             label: "Chức vụ",
           },
           hasAnyPermission(["hr:view_salary", "hr:view_own_salary"]) && {
@@ -200,6 +221,10 @@ const MainLayout = () => {
       else if (snippet === "salaries") title = "Lương";
       else if (snippet === "dashboard") title = "Dashboard";
       else if (snippet === "new") title = "Thêm mới";
+      else if (snippet === "ecommerce") title = "TMĐT";
+      else if (snippet === "banners") title = "Banner";
+      else if (snippet === "products") title = "Sản phẩm";
+      else if (snippet === "news") title = "Tin tức";
 
       breadcrumbItems.push({
         title,
@@ -241,7 +266,7 @@ const MainLayout = () => {
             borderBottom: `1px solid ${token.colorBorder}`,
           }}
         >
-          {collapsed ? "🏢" : "🏢 CRM + HR"}
+          {collapsed ? (isEcommerceMode ? "EC" : "🏢") : (isEcommerceMode ? "Ordering" : "🏢 CRM + HR")}
         </div>
         <Menu
           theme="dark"
@@ -281,6 +306,24 @@ const MainLayout = () => {
           />
 
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            {/* Ecommerce Switch */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Button
+                onClick={() => {
+                  const newMode = !isEcommerceMode;
+                  setIsEcommerceMode(newMode);
+                  if (newMode) {
+                    navigate("/ecommerce/banners");
+                  } else {
+                    navigate("/admin/overview");
+                  }
+                }}
+                type={isEcommerceMode ? "primary" : "default"}
+                ghost={isEcommerceMode}
+              >
+                {isEcommerceMode ? "Switch to CRM" : "Switch to E-com"}
+              </Button>
+            </div>
             {/* Notifications */}
             <Badge count={5} size="small">
               <Button
@@ -315,19 +358,19 @@ const MainLayout = () => {
                 >
                   {user?.fullName?.charAt(0) || "U"}
                 </Avatar>
-                <div style={{ 
-                  display: "flex", 
-                  flexDirection: "column", 
+                <div style={{
+                  display: "flex",
+                  flexDirection: "column",
                   alignItems: "flex-start",
                   lineHeight: 1.2,
                 }}>
                   <span style={{ fontWeight: 500, fontSize: 14, color: token.colorText }}>
                     {user?.fullName || "User"}
                   </span>
-                  <span style={{ 
-                    fontSize: 12, 
-                    color: token.colorTextSecondary, 
-                    textTransform: "capitalize" 
+                  <span style={{
+                    fontSize: 12,
+                    color: token.colorTextSecondary,
+                    textTransform: "capitalize"
                   }}>
                     {user?.role?.replace("_", " ") || "User"}
                   </span>

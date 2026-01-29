@@ -3,7 +3,7 @@ import { ConfigProvider } from "antd";
 import viVN from "antd/locale/vi_VN";
 import dayjs from "dayjs";
 import "dayjs/locale/vi";
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/guards/ProtectedRoute";
 import MainLayout from "./components/layout/MainLayout";
 
@@ -28,8 +28,42 @@ import { CustomerDetail } from "./pages/crm/CustomerDetail";
 import { AdminOverview } from "./pages/admin/AdminOverview";
 import { AuditLogPage } from "./pages/admin/AuditLogPage";
 
+// E-commerce Pages
+import BannerList from "./pages/ecommerce/BannerList";
+import ProductList from "./pages/ecommerce/ProductList";
+import NewsList from "./pages/ecommerce/NewsList";
+
 // Set dayjs locale to Vietnamese
 dayjs.locale("vi");
+
+// Helper component for smart redirect
+const RootRedirect = () => {
+  const { isAuthenticated, hasAnyPermission } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Check permissions in order of priority
+  if (hasAnyPermission(["admin:view_all_data"])) {
+    return <Navigate to="/admin/overview" replace />;
+  }
+
+  if (hasAnyPermission(["crm:view_all_customers", "crm:view_own_customers"])) {
+    return <Navigate to="/crm/customers" replace />;
+  }
+
+  if (hasAnyPermission(["hr:view_all_employees", "hr:view_department_employees"])) {
+    return <Navigate to="/hr/dashboard" replace />;
+  }
+
+  if (hasAnyPermission(["attendance:checkin", "attendance:view_own"])) {
+    return <Navigate to="/hr/attendance" replace />;
+  }
+
+  // Default fallback
+  return <Navigate to="/access-denied" replace />;
+};
 
 function App() {
   return (
@@ -58,8 +92,8 @@ function App() {
                 </ProtectedRoute>
               }
             >
-              {/* Redirect root to appropriate dashboard based on role */}
-              <Route index element={<Navigate to="/admin/overview" replace />} />
+              {/* Smart Redirect based on role/permissions */}
+              <Route index element={<RootRedirect />} />
 
               {/* Admin Routes */}
               <Route
@@ -171,6 +205,11 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
+              {/* E-commerce Routes */}
+              <Route path="ecommerce/banners" element={<BannerList />} />
+              <Route path="ecommerce/products" element={<ProductList />} />
+              <Route path="ecommerce/news" element={<NewsList />} />
             </Route>
 
             {/* 404 Not Found */}
