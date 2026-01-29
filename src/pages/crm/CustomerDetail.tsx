@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Row, Col, Descriptions, Tag, Button, Space, Timeline, Statistic, Avatar, Empty } from 'antd';
+import {
+  Card, Row, Col, Descriptions, Tag, Button, Space, Timeline, Statistic, Avatar, Empty,
+  List, Upload, message, Tooltip
+} from 'antd';
 import {
   EditOutlined,
   MailOutlined,
@@ -10,9 +13,18 @@ import {
   CalendarOutlined,
   ArrowLeftOutlined,
   TrophyOutlined,
+  UploadOutlined,
+  FilePdfOutlined,
+  FileWordOutlined,
+  FileExcelOutlined,
+  DeleteOutlined,
+  PaperClipOutlined,
 } from '@ant-design/icons';
 import { mockCustomers, mockCustomerHistory } from '../../data/mockAuthData';
 import { PermissionGuard } from '../../components/guards/PermissionGuard';
+import { Quotation } from '@/types/crm.types';
+import { useAuth } from '@/contexts/AuthContext';
+import { RcFile } from 'antd/es/upload';
 
 export const CustomerDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -61,6 +73,59 @@ export const CustomerDetail: React.FC = () => {
     return colors[action] || 'default';
   };
 
+  const { user } = useAuth();
+  const [quotations, setQuotations] = useState<Quotation[]>(customer?.quotations || []);
+
+  const handleUpload = (file: RcFile) => {
+    const isAllowedType =
+      file.type === 'application/pdf' ||
+      file.type === 'application/msword' ||
+      file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+      file.type === 'application/vnd.ms-excel' ||
+      file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+    if (!isAllowedType) {
+      message.error('Chỉ được phép tải lên file PDF, Word hoặc Excel!');
+      return Upload.LIST_IGNORE;
+    }
+
+    // Simulate upload
+    const type = file.type.includes('pdf') ? 'pdf' :
+      file.type.includes('excel') || file.type.includes('spreadsheet') ? 'excel' : 'word';
+
+    const newQuotation: Quotation = {
+      id: `quote-${Date.now()}`,
+      name: file.name,
+      url: URL.createObjectURL(file), // Mock URL
+      type: type as any,
+      uploadDate: new Date().toISOString(),
+      size: file.size,
+      uploadedBy: user?.id || 'unknown',
+      uploadedByName: user?.fullName || 'Unknown',
+    };
+
+    setTimeout(() => {
+      setQuotations(prev => [newQuotation, ...prev]);
+      message.success(`${file.name} đã được tải lên thành công`);
+    }, 1000);
+
+    return false; // Prevent auto upload
+  };
+
+  const handleDeleteQuotation = (id: string) => {
+    setQuotations(prev => prev.filter(q => q.id !== id));
+    message.success('Đã xóa báo giá');
+  };
+
+  const getFileIcon = (type: string) => {
+    switch (type) {
+      case 'pdf': return <FilePdfOutlined style={{ color: 'red' }} />;
+      case 'word': return <FileWordOutlined style={{ color: 'blue' }} />;
+      case 'excel': return <FileExcelOutlined style={{ color: 'green' }} />;
+      default: return <PaperClipOutlined />;
+    }
+  };
+
   if (!customer) {
     return (
       <div style={{ padding: 24 }}>
@@ -106,7 +171,9 @@ export const CustomerDetail: React.FC = () => {
       <Row gutter={[24, 24]}>
         {/* Main Info */}
         <Col xs={24} lg={16}>
+          {/* Main Info Card */}
           <Card title="Thông tin cơ bản" bordered={false}>
+            {/* ... (existing descriptions) ... */}
             <Descriptions column={{ xs: 1, sm: 2 }} bordered>
               <Descriptions.Item label="Tên khách hàng" span={2}>
                 <strong>{customer.name}</strong>
@@ -178,6 +245,57 @@ export const CustomerDetail: React.FC = () => {
                 </Space>
               </div>
             </PermissionGuard>
+          </Card>
+
+          {/* Quotations Section */}
+          <Card
+            title="Báo giá"
+            bordered={false}
+            style={{ marginTop: 24 }}
+            extra={
+              <Upload
+                beforeUpload={handleUpload}
+                showUploadList={false}
+                accept=".pdf,.doc,.docx,.xls,.xlsx"
+              >
+                <Button icon={<UploadOutlined />}>Tải báo giá</Button>
+              </Upload>
+            }
+          >
+            {quotations.length > 0 ? (
+              <List
+                itemLayout="horizontal"
+                dataSource={quotations}
+                renderItem={(item) => (
+                  <List.Item
+                    actions={[
+                      <Button
+                        type="text"
+                        danger
+                        icon={<DeleteOutlined />}
+                        onClick={() => handleDeleteQuotation(item.id)}
+                      />
+                    ]}
+                  >
+                    <List.Item.Meta
+                      avatar={<Avatar icon={getFileIcon(item.type)} style={{ backgroundColor: 'transparent', color: '#000' }} />}
+                      title={<a href={item.url} target="_blank" rel="noreferrer">{item.name}</a>}
+                      description={
+                        <Space>
+                          <span>{(item.size / 1024).toFixed(1)} KB</span>
+                          <span>•</span>
+                          <span>{new Date(item.uploadDate).toLocaleDateString('vi-VN')}</span>
+                          <span>•</span>
+                          <span>Bởi: {item.uploadedByName || item.uploadedBy}</span>
+                        </Space>
+                      }
+                    />
+                  </List.Item>
+                )}
+              />
+            ) : (
+              <Empty description="Chưa có báo giá nào" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            )}
           </Card>
 
           {/* History */}

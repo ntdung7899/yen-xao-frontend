@@ -20,6 +20,18 @@ export interface Customer {
   tags: string[];
   notes?: string;
   totalValue: number; // Tổng giá trị giao dịch
+  quotations?: Quotation[];
+}
+
+export interface Quotation {
+  id: string;
+  name: string;
+  url: string;
+  type: 'pdf' | 'word' | 'excel' | 'other';
+  uploadDate: string;
+  size: number;
+  uploadedBy: string; // User ID
+  uploadedByName?: string;
 }
 
 export interface CustomerHistory {
