@@ -1,11 +1,12 @@
 // Authentication & Authorization Types
 
-export type Role = 'admin' | 'hr_manager' | 'crm_manager' | 'sale' | 'hr_staff';
+export type Role = 'admin' | 'hr_manager' | 'crm_manager' | 'sale' | 'hr_staff' | 'supervisor';
 
 export type Permission =
   // CRM Permissions
   | 'crm:view_all_customers'
   | 'crm:view_own_customers'
+  | 'crm:view_team_customers'
   | 'crm:create_customer'
   | 'crm:edit_customer'
   | 'crm:delete_customer'
@@ -14,6 +15,7 @@ export type Permission =
   // HR Permissions
   | 'hr:view_all_employees'
   | 'hr:view_department_employees'
+  | 'hr:view_team_employees'
   | 'hr:create_employee'
   | 'hr:edit_employee'
   | 'hr:delete_employee'

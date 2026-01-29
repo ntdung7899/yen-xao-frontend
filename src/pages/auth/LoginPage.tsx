@@ -44,6 +44,7 @@ export const LoginPage: React.FC = () => {
       sale: <ShoppingOutlined />,
       hr_manager: <SafetyOutlined />,
       hr_staff: <FileTextOutlined />,
+      supervisor: <TeamOutlined />,
     };
     return icons[role] || <UserOutlined />;
   };
@@ -55,6 +56,7 @@ export const LoginPage: React.FC = () => {
       sale: 'green',
       hr_manager: 'orange',
       hr_staff: 'magenta',
+      supervisor: 'gold',
     };
     return colors[role] || 'default';
   };
@@ -66,6 +68,7 @@ export const LoginPage: React.FC = () => {
       sale: 'Sale',
       hr_manager: 'HR Manager',
       hr_staff: 'HR Staff',
+      supervisor: 'Supervisor',
     };
     return names[role] || role;
   };
@@ -154,9 +157,9 @@ export const LoginPage: React.FC = () => {
                 key={role}
                 icon={getRoleIcon(role)}
                 color={getRoleColor(role)}
-                style={{ 
-                  cursor: 'pointer', 
-                  padding: '6px 12px', 
+                style={{
+                  cursor: 'pointer',
+                  padding: '6px 12px',
                   fontSize: 13,
                   fontWeight: 500,
                 }}

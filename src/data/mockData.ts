@@ -164,6 +164,21 @@ export const mockEmployees: Employee[] = [
     joinDate: '2022-02-15',
     avatar: '🧑‍💼',
   },
+  {
+    id: 'user-8',
+    employeeCode: 'EMP008',
+    fullName: 'Nguyễn Văn Supervisor',
+    dateOfBirth: '1990-01-01',
+    gender: 'male' as const,
+    email: 'supervisor@company.com',
+    phone: '0908888888',
+    departmentId: 'dept-1',
+    positionId: 'pos-6',
+    baseSalary: 20000000,
+    status: 'active' as const,
+    joinDate: '2022-01-01',
+    avatar: '👨‍✈️',
+  },
   // Existing Mock Employees
   {
     id: "emp-1",

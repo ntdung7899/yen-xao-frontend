@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Card, Row, Col, Descriptions, Tag, Button, Space, Timeline, Statistic, Avatar, Empty,
-  List, Upload, message, Tooltip
+  List, Upload, message
 } from 'antd';
 import {
   EditOutlined,

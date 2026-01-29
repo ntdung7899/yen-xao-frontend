@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Calendar, Badge, Button, Modal, Form, Input, Select, DatePicker, message, Card, Row, Col, Typography } from 'antd';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
-import { PlusOutlined, CalendarOutlined } from '@ant-design/icons';
+import { PlusOutlined } from '@ant-design/icons';
 
 const { TextArea } = Input;
 const { Option } = Select;

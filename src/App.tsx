@@ -20,6 +20,7 @@ import DepartmentList from "./pages/hr/DepartmentList";
 import PositionList from "./pages/hr/PositionList";
 import AttendancePage from "./pages/hr/AttendancePage";
 import SalariesPage from "./pages/hr/SalariesPage";
+import LeaveRequestList from "./pages/hr/LeaveRequestList";
 
 // CRM Pages
 import { CustomerList } from "./pages/crm/CustomerList";
@@ -164,6 +165,17 @@ function App() {
               {/* HR Routes */}
               <Route path="hr/dashboard" element={<Dashboard />} />
               <Route
+                path="hr/requests-approval"
+                element={
+                  <ProtectedRoute
+                    requiredPermissions={["attendance:approve"]}
+                    requireAll={false}
+                  >
+                    <LeaveRequestList />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="hr/attendance"
                 element={
                   <ProtectedRoute
@@ -178,7 +190,7 @@ function App() {
                 path="hr/employees"
                 element={
                   <ProtectedRoute
-                    requiredPermissions={["hr:view_all_employees", "hr:view_department_employees"]}
+                    requiredPermissions={["hr:view_all_employees", "hr:view_department_employees", "hr:view_team_employees"]}
                     requireAll={false}
                   >
                     <EmployeeList />
@@ -189,7 +201,7 @@ function App() {
                 path="hr/employees/:id"
                 element={
                   <ProtectedRoute
-                    requiredPermissions={["hr:view_all_employees", "hr:view_department_employees"]}
+                    requiredPermissions={["hr:view_all_employees", "hr:view_department_employees", "hr:view_team_employees"]}
                     requireAll={false}
                   >
                     <EmployeeDetail />

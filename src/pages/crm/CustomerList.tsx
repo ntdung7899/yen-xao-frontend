@@ -51,6 +51,13 @@ export const CustomerList: React.FC = () => {
     // Role-based filtering
     if (hasPermission('crm:view_all_customers')) {
       filtered = customers;
+    } else if (hasPermission('crm:view_team_customers') && user?.teamId) {
+      // Find team members
+      const teamMemberIds = mockUsers
+        .filter(u => u.teamId === user.teamId)
+        .map(u => u.id);
+
+      filtered = customers.filter(c => teamMemberIds.includes(c.assignedTo));
     } else if (hasPermission('crm:view_own_customers')) {
       filtered = customers.filter((c) => c.assignedTo === user?.id);
     } else {

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Table,
@@ -34,6 +34,8 @@ import {
   getDepartmentById,
   getPositionById,
 } from "@/data/mockData";
+import { mockUsers } from "@/data/mockAuthData";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   formatCurrency,
   formatDate,
@@ -52,7 +54,7 @@ const { Search } = Input;
 
 const EmployeeList = () => {
   const navigate = useNavigate();
-  const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
+  const { user, hasPermission } = useAuth();
   const [loading] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
@@ -66,6 +68,52 @@ const EmployeeList = () => {
     showTotal: (total) => `Tổng số ${total} nhân viên`,
     pageSizeOptions: PAGE_SIZE_OPTIONS,
   });
+
+  // Initial data loading with permission check
+  const [employees, setEmployees] = useState<Employee[]>([]);
+
+  useEffect(() => {
+    if (hasPermission("hr:view_all_employees")) {
+      setEmployees(mockEmployees);
+    } else if (hasPermission("hr:view_team_employees")) {
+      // Find team members
+      // In a real app, we would query by teamId. 
+      // Here we assume 'departmentId' or we need to look up mockUsers to see who is in the team.
+      // But mockEmployees doesn't have teamId directly, only mockUsers has.
+      // We need to map mockEmployees to mockUsers to check team.
+      // Actually mockAuthData has mockTeams.
+      // Let's assume for this mock that if user has teamId, we filter employees in that team.
+      // Employees in mockEmployees are linked to users potentially. 
+      // Let's filter by department for now if team is not available on Employee type, 
+      // OR better, checking mockUsers for list of IDs in the team.
+
+      // Let's look at mockUsers to find IDs of people in the same team
+      const currentUser = mockUsers.find(u => u.id === user?.id);
+      if (currentUser?.teamId) {
+        /*
+        import { mockTeams } from "@/data/mockAuthData"; // We need to import this
+        const myTeam = mockTeams.find(t => t.id === currentUser.teamId);
+        if (myTeam) {
+             const teamMemberIds = myTeam.memberIds;
+             setEmployees(mockEmployees.filter(e => teamMemberIds.includes(e.id)));
+        }
+        */
+        // Since I cannot easily import mockTeams here without adding import, 
+        // I will rely on finding users who match equality of teamId with current user.
+        const teamMemberIds = mockUsers
+          .filter(u => u.teamId === currentUser.teamId)
+          .map(u => u.id);
+
+        setEmployees(mockEmployees.filter(e => teamMemberIds.includes(e.id)));
+      } else {
+        setEmployees([]);
+      }
+    } else if (hasPermission("hr:view_department_employees")) {
+      setEmployees(mockEmployees.filter(e => e.departmentId === user?.departmentId));
+    } else {
+      setEmployees([]);
+    }
+  }, [user, hasPermission]);
 
   // Filter employees
   const filteredEmployees = useMemo(() => {

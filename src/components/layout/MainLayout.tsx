@@ -40,7 +40,7 @@ const MainLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { token } = theme.useToken();
-  const { user, logout, hasAnyPermission } = useAuth();
+  const { user, logout, hasAnyPermission, hasPermission } = useAuth();
 
   // Build menu items based on permissions
   const getMenuItems = (): MenuProps["items"] => {
@@ -118,6 +118,7 @@ const MainLayout = () => {
       hasAnyPermission([
         "hr:view_all_employees",
         "hr:view_department_employees",
+        "hr:view_team_employees",
       ])
     ) {
       items.push({
@@ -125,7 +126,7 @@ const MainLayout = () => {
         icon: <SafetyOutlined />,
         label: "HR",
         children: [
-          {
+          hasAnyPermission(["hr:view_all_employees", "hr:view_department_employees"]) && {
             key: "/hr/dashboard",
             icon: <DashboardOutlined />,
             label: "Dashboard",
@@ -135,12 +136,12 @@ const MainLayout = () => {
             icon: <TeamOutlined />,
             label: "Nhân viên",
           },
-          {
+          hasAnyPermission(["hr:view_all_employees", "hr:view_department_employees"]) && {
             key: "/hr/departments",
             icon: <ApartmentOutlined />,
             label: "Phòng ban",
           },
-          {
+          hasAnyPermission(["hr:view_all_employees", "hr:view_department_employees"]) && {
             key: "/hr/positions",
             icon: <IdcardOutlined />,
             label: "Chức vụ",
@@ -150,9 +151,16 @@ const MainLayout = () => {
             icon: <DollarOutlined />,
             label: "Lương",
           },
+          hasPermission("attendance:approve") && {
+            key: "/hr/requests-approval",
+            icon: <FileTextOutlined />,
+            label: "Duyệt đơn",
+          },
         ].filter(Boolean) as MenuProps["items"],
       });
     }
+
+
 
     // Attendance menu
     if (hasAnyPermission(["attendance:checkin", "attendance:view_own"])) {

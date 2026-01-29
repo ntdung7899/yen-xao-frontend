@@ -1,18 +1,25 @@
-import { useState, useEffect } from 'react';
-import { 
-  Card, 
-  Button, 
-  Space, 
-  message, 
-  Calendar, 
-  Badge, 
-  Row, 
-  Col, 
-  Statistic, 
+import { useState, useEffect, useMemo } from 'react';
+import {
+  Card,
+  Button,
+  Space,
+  message,
+  Calendar,
+  Badge,
+  Row,
+  Col,
+  Statistic,
   Modal,
   Typography,
   Divider,
-  Tag
+  Tag,
+  Tabs,
+  Table,
+  DatePicker,
+  Select,
+  Input,
+  Avatar,
+
 } from 'antd';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
@@ -24,10 +31,18 @@ import {
   CloseCircleOutlined,
   WarningOutlined,
   SmileOutlined,
-  UserOutlined
+  UserOutlined,
+  SearchOutlined,
+  TeamOutlined,
+  FilterOutlined,
 } from '@ant-design/icons';
+import type { ColumnsType } from 'antd/es/table';
+import { mockEmployees, mockDepartments } from '../../data/mockData';
+import { mockUsers } from '../../data/mockAuthData';
+import { useAuth } from '../../contexts/AuthContext';
 
 const { Title, Text } = Typography;
+const { Option } = Select;
 
 // Attendance record interface
 interface AttendanceRecord {
@@ -44,24 +59,24 @@ const generateMockAttendance = (): AttendanceRecord[] => {
   const records: AttendanceRecord[] = [];
   const currentMonth = dayjs();
   const daysInMonth = currentMonth.daysInMonth();
-  
+
   for (let i = 1; i <= daysInMonth; i++) {
     const date = currentMonth.date(i);
     const dayOfWeek = date.day();
-    
+
     // Skip weekends
     if (dayOfWeek === 0 || dayOfWeek === 6) {
       continue;
     }
-    
+
     // Only generate records for past dates and today
     if (date.isAfter(dayjs(), 'day')) {
       continue;
     }
-    
+
     const random = Math.random();
     let record: AttendanceRecord;
-    
+
     if (random < 0.7) {
       // 70% present on time
       record = {
@@ -102,14 +117,14 @@ const generateMockAttendance = (): AttendanceRecord[] => {
         notes: 'Nghỉ phép',
       };
     }
-    
+
     records.push(record);
   }
-  
+
   return records;
 };
 
-export default function AttendancePage() {
+const PersonalAttendance = () => {
   const [currentTime, setCurrentTime] = useState(dayjs());
   const [todayCheckedIn, setTodayCheckedIn] = useState(false);
   const [todayCheckInTime, setTodayCheckInTime] = useState<string | null>(null);
@@ -181,13 +196,13 @@ export default function AttendancePage() {
 
     return (
       <div style={{ padding: '2px 0' }}>
-        <Badge 
-          status={config.color as 'success' | 'error' | 'default' | 'processing' | 'warning'} 
+        <Badge
+          status={config.color as 'success' | 'error' | 'default' | 'processing' | 'warning'}
           text={
             <span style={{ fontSize: 11 }}>
               {config.icon} {config.text}
             </span>
-          } 
+          }
         />
       </div>
     );
@@ -225,9 +240,9 @@ export default function AttendancePage() {
       {/* Statistics Cards */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} md={6}>
-          <Card 
+          <Card
             bordered={false}
-            style={{ 
+            style={{
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               color: 'white'
             }}
@@ -242,9 +257,9 @@ export default function AttendancePage() {
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card 
+          <Card
             bordered={false}
-            style={{ 
+            style={{
               background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
               color: 'white'
             }}
@@ -259,9 +274,9 @@ export default function AttendancePage() {
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card 
+          <Card
             bordered={false}
-            style={{ 
+            style={{
               background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
               color: 'white'
             }}
@@ -276,9 +291,9 @@ export default function AttendancePage() {
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card 
+          <Card
             bordered={false}
-            style={{ 
+            style={{
               background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
               color: 'white'
             }}
@@ -306,14 +321,14 @@ export default function AttendancePage() {
               </Space>
             }
             bordered={false}
-            style={{ 
+            style={{
               boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
               height: '100%'
             }}
           >
             {/* Live Clock */}
-            <div style={{ 
-              textAlign: 'center', 
+            <div style={{
+              textAlign: 'center',
               padding: '24px 0',
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               borderRadius: 8,
@@ -346,9 +361,9 @@ export default function AttendancePage() {
 
             {/* Today's Summary */}
             {(todayCheckInTime || todayCheckOutTime) && (
-              <div style={{ 
-                background: '#f5f5f5', 
-                padding: 16, 
+              <div style={{
+                background: '#f5f5f5',
+                padding: 16,
                 borderRadius: 8,
                 marginBottom: 24
               }}>
@@ -392,7 +407,7 @@ export default function AttendancePage() {
                 loading={loadingCheckin}
                 disabled={todayCheckedIn || todayCheckInTime !== null}
                 block
-                style={{ 
+                style={{
                   height: 56,
                   fontSize: 16,
                   fontWeight: 500,
@@ -410,7 +425,7 @@ export default function AttendancePage() {
                 loading={loadingCheckout}
                 disabled={!todayCheckedIn}
                 block
-                style={{ 
+                style={{
                   height: 56,
                   fontSize: 16,
                   fontWeight: 500
@@ -434,10 +449,10 @@ export default function AttendancePage() {
             bordered={false}
             style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
           >
-            <Calendar 
+            <Calendar
               cellRender={dateCellRender}
               onSelect={handleDateSelect}
-              style={{ 
+              style={{
                 cursor: 'pointer'
               }}
             />
@@ -490,7 +505,7 @@ export default function AttendancePage() {
       >
         {selectedRecord && selectedDate && (
           <div>
-            <div style={{ 
+            <div style={{
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               padding: 20,
               borderRadius: 8,
@@ -553,7 +568,7 @@ export default function AttendancePage() {
                   <Divider style={{ margin: 0 }} />
                   <div>
                     <Text strong>Ghi chú:</Text>
-                    <div style={{ 
+                    <div style={{
                       marginTop: 8,
                       padding: 12,
                       background: '#fafafa',
@@ -569,6 +584,344 @@ export default function AttendancePage() {
           </div>
         )}
       </Modal>
+    </div>
+  );
+}
+
+// Helper to generate random status for system view
+const generateRandomDailyStatus = (_date: Dayjs) => {
+  const random = Math.random();
+  if (random < 0.7) {
+    return {
+      status: 'present' as const,
+      checkIn: '08:00:00',
+      checkOut: '17:30:00',
+      hoursWorked: 8.5,
+    };
+  } else if (random < 0.85) {
+    return {
+      status: 'late' as const,
+      checkIn: '08:45:00',
+      checkOut: '17:30:00',
+      hoursWorked: 7.75,
+    };
+  } else if (random < 0.95) {
+    return {
+      status: 'absent' as const,
+      checkIn: null,
+      checkOut: null,
+      hoursWorked: 0,
+    };
+  } else {
+    return {
+      status: 'dayoff' as const,
+      checkIn: null,
+      checkOut: null,
+      hoursWorked: 0,
+    };
+  }
+};
+
+const SystemAttendance = () => {
+  const [selectedDate, setSelectedDate] = useState<Dayjs>(dayjs());
+  const [departmentFilter, setDepartmentFilter] = useState<string | undefined>();
+  const [searchText, setSearchText] = useState('');
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
+
+  /* 
+     Update: Renamed logic to support both System (View All) and Team (View Team) 
+  */
+  const { user, hasPermission } = useAuth();
+
+  // Generate daily data for all employees OR filtered by team
+  const dailyAttendanceData = useMemo(() => {
+    let relevantEmployees = mockEmployees;
+
+    if (!hasPermission('attendance:view_all')) {
+      if (hasPermission('attendance:view_team')) {
+        const currentUser = mockUsers.find(u => u.id === user?.id);
+        if (currentUser?.teamId) {
+          const teamMemberIds = mockUsers
+            .filter(u => u.teamId === currentUser.teamId)
+            .map(u => u.id);
+          relevantEmployees = mockEmployees.filter(e => teamMemberIds.includes(e.id));
+        } else {
+          relevantEmployees = [];
+        }
+      } else if (hasPermission('attendance:view_department')) {
+        relevantEmployees = mockEmployees.filter(e => e.departmentId === user?.departmentId);
+      }
+    }
+
+    return relevantEmployees.map(emp => {
+      const statusData = generateRandomDailyStatus(selectedDate);
+      return {
+        ...emp,
+        ...statusData,
+        departmentName: mockDepartments.find(d => d.id === emp.departmentId)?.name || 'Unknown',
+      };
+    });
+  }, [selectedDate, user, hasPermission]);
+
+  // Handle Approve
+  const handleApprove = (record: any) => {
+    message.success(`Đã duyệt công cho ${record.fullName}`);
+  };
+
+  // Filter data (existing logic + fix types)
+  const filteredData = useMemo(() => {
+    return dailyAttendanceData.filter(record => {
+      const matchDept = departmentFilter ? record.departmentId === departmentFilter : true;
+      const matchSearch = searchText
+        ? record.fullName.toLowerCase().includes(searchText.toLowerCase()) ||
+        record.employeeCode.toLowerCase().includes(searchText.toLowerCase())
+        : true;
+      return matchDept && matchSearch;
+    });
+  }, [dailyAttendanceData, departmentFilter, searchText]);
+
+  // Statistics for the selected day
+  const stats = useMemo(() => {
+    const total = filteredData.length;
+    const present = filteredData.filter(r => r.status === 'present').length;
+    const late = filteredData.filter(r => r.status === 'late').length;
+    const absent = filteredData.filter(r => r.status === 'absent').length;
+    const dayoff = filteredData.filter(r => r.status === 'dayoff').length;
+    return { total, present, late, absent, dayoff };
+  }, [filteredData]);
+
+  const columns: ColumnsType<typeof dailyAttendanceData[0]> = [
+    {
+      title: 'Nhân viên',
+      key: 'employee',
+      width: 250,
+      render: (_, record) => (
+        <Space>
+          <Avatar src={record.avatar} icon={<UserOutlined />} />
+          <div>
+            <div style={{ fontWeight: 500 }}>{record.fullName}</div>
+            <div style={{ fontSize: 12, color: '#888' }}>{record.employeeCode}</div>
+          </div>
+        </Space>
+      ),
+    },
+    {
+      title: 'Phòng ban',
+      dataIndex: 'departmentName',
+      key: 'department',
+      width: 150,
+    },
+    {
+      title: 'Trạng thái',
+      dataIndex: 'status',
+      key: 'status',
+      width: 140,
+      render: (status) => {
+        const config = {
+          present: { color: 'success', text: 'Đúng giờ' },
+          late: { color: 'warning', text: 'Đi muộn' },
+          absent: { color: 'error', text: 'Vắng mặt' },
+          dayoff: { color: 'default', text: 'Nghỉ phép' },
+        };
+        const c = config[status as keyof typeof config];
+        return <Tag color={c.color}>{c.text}</Tag>;
+      },
+    },
+    {
+      title: 'Giờ vào',
+      dataIndex: 'checkIn',
+      key: 'checkIn',
+      width: 120,
+      render: (text) => text || '-',
+    },
+    {
+      title: 'Giờ ra',
+      dataIndex: 'checkOut',
+      key: 'checkOut',
+      width: 120,
+      render: (text) => text || '-',
+    },
+    {
+      title: 'Công',
+      dataIndex: 'hoursWorked',
+      key: 'hoursWorked',
+      width: 100,
+      render: (val) => val ? `${val}h` : '-',
+    },
+    {
+      title: 'Thao tác',
+      key: 'action',
+      render: (_, record) => (
+        <Space>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => {
+              setSelectedEmployee(record);
+              setDetailModalVisible(true);
+            }}
+          >
+            Chi tiết
+          </Button>
+          {hasPermission('attendance:approve') && (record.status === 'late' || record.status === 'dayoff') && (
+            <Button
+              type="link"
+              size="small"
+              style={{ color: '#52c41a' }}
+              onClick={() => handleApprove(record)}
+            >
+              Duyệt
+            </Button>
+          )}
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <div style={{ paddingTop: 16 }}>
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} sm={12} md={6}>
+          <Card bordered={false} style={{ background: '#f6ffed' }}>
+            <Statistic
+              title="Có mặt đúng giờ"
+              value={stats.present}
+              valueStyle={{ color: '#389e0d' }}
+              prefix={<CheckCircleOutlined />}
+              suffix={`/ ${stats.total}`}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card bordered={false} style={{ background: '#fffbe6' }}>
+            <Statistic
+              title="Đi muộn"
+              value={stats.late}
+              valueStyle={{ color: '#d46b08' }}
+              prefix={<WarningOutlined />}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card bordered={false} style={{ background: '#fff1f0' }}>
+            <Statistic
+              title="Vắng mặt"
+              value={stats.absent}
+              valueStyle={{ color: '#cf1322' }}
+              prefix={<CloseCircleOutlined />}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card bordered={false} style={{ background: '#f5f5f5' }}>
+            <Statistic
+              title="Nghỉ phép"
+              value={stats.dayoff}
+              valueStyle={{ color: '#595959' }}
+              prefix={<SmileOutlined />}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      <Card
+        title={
+          <Space>
+            <TeamOutlined />
+            <span>Danh sách chấm công ngày {selectedDate.format('DD/MM/YYYY')}</span>
+          </Space>
+        }
+        extra={
+          <Space>
+            <DatePicker
+              value={selectedDate}
+              onChange={(date) => date && setSelectedDate(date)}
+              allowClear={false}
+            />
+            <Button icon={<FilterOutlined />}>Bộ lọc nâng cao</Button>
+          </Space>
+        }
+      >
+        <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+          <Col xs={24} md={8}>
+            <Input
+              placeholder="Tìm nhân viên..."
+              prefix={<SearchOutlined />}
+              value={searchText}
+              onChange={e => setSearchText(e.target.value)}
+            />
+          </Col>
+          <Col xs={24} md={6}>
+            <Select
+              placeholder="Chọn phòng ban"
+              style={{ width: '100%' }}
+              allowClear
+              onChange={setDepartmentFilter}
+            >
+              {mockDepartments.map(d => (
+                <Option key={d.id} value={d.id}>{d.name}</Option>
+              ))}
+            </Select>
+          </Col>
+        </Row>
+
+        <Table
+          columns={columns}
+          dataSource={filteredData}
+          rowKey="id"
+          pagination={{ pageSize: 10 }}
+        />
+      </Card>
+
+      <Modal
+        title={`Lịch sử chấm công: ${selectedEmployee?.fullName}`}
+        open={detailModalVisible}
+        onCancel={() => setDetailModalVisible(false)}
+        footer={null}
+        width={800}
+      >
+        {selectedEmployee && (
+          <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
+            <CalendarOutlined style={{ fontSize: 48, marginBottom: 16 }} />
+            <p>Chức năng xem chi tiết lịch sử chấm công của nhân viên đang được cập nhật.</p>
+            <p>Vui lòng thử lại sau.</p>
+          </div>
+        )}
+      </Modal>
+    </div>
+  );
+};
+
+export default function AttendancePage() {
+  const { hasPermission } = useAuth();
+
+  // Check if user has permission to view all attendance
+  const canViewAll = hasPermission('attendance:view_all');
+
+  const items = [
+    {
+      key: 'personal',
+      label: 'Cá nhân',
+      children: <PersonalAttendance />,
+    },
+    ...(canViewAll ? [{
+      key: 'system',
+      label: 'Toàn hệ thống',
+      children: <SystemAttendance />,
+    }] : []),
+  ];
+
+  if (!canViewAll) {
+    return <PersonalAttendance />;
+  }
+
+  return (
+    <div style={{ padding: '0 24px' }}>
+      <Title level={2} style={{ marginBottom: 24 }}>
+        <CalendarOutlined /> Quản lý chấm công
+      </Title>
+      <Tabs defaultActiveKey="personal" items={items} />
     </div>
   );
 }

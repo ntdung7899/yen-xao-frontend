@@ -4,6 +4,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
     // CRM Permissions
     "crm:view_all_customers": "Xem tất cả khách hàng",
     "crm:view_own_customers": "Xem khách hàng phụ trách",
+    "crm:view_team_customers": "Xem khách hàng đội nhóm",
     "crm:create_customer": "Thêm khách hàng mới",
     "crm:edit_customer": "Chỉnh sửa khách hàng",
     "crm:delete_customer": "Xóa khách hàng",
@@ -13,6 +14,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
     // HR Permissions
     "hr:view_all_employees": "Xem tất cả nhân viên",
     "hr:view_department_employees": "Xem nhân viên phòng ban",
+    "hr:view_team_employees": "Xem nhân viên đội nhóm",
     "hr:create_employee": "Thêm nhân viên mới",
     "hr:edit_employee": "Chỉnh sửa nhân viên",
     "hr:delete_employee": "Xóa nhân viên",

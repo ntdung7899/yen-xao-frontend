@@ -79,6 +79,20 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'attendance:view_own',
     'attendance:view_department',
   ],
+  supervisor: [
+    'crm:view_team_customers',
+    'crm:view_own_customers',
+    'crm:create_customer',
+    'crm:edit_customer',
+    'crm:transfer_customer',
+    'crm:view_customer_history',
+    'hr:view_team_employees',
+    'attendance:checkin',
+    'attendance:checkout',
+    'attendance:view_own',
+    'attendance:view_team',
+    'attendance:approve',
+  ],
 };
 
 // ============ DEPARTMENTS ============
@@ -95,12 +109,13 @@ export const mockPositions: Position[] = [
   { id: 'pos-3', code: 'SALE', name: 'Sales Executive', level: 1, description: 'Sales Staff' },
   { id: 'pos-4', code: 'HR_MGR', name: 'HR Manager', level: 3, description: 'HR Management' },
   { id: 'pos-5', code: 'HR_STAFF', name: 'HR Staff', level: 1, description: 'HR Staff' },
+  { id: 'pos-6', code: 'SUPERVISOR', name: 'Team Supervisor', level: 2, description: 'Team Lead' },
 ];
 
 // ============ TEAMS ============
 export const mockTeams: Team[] = [
   { id: 'team-1', name: 'Sales Team A', managerId: 'user-2', memberIds: ['user-2', 'user-3'], description: 'Enterprise Sales' },
-  { id: 'team-2', name: 'Sales Team B', managerId: 'user-6', memberIds: ['user-6', 'user-7'], description: 'SMB Sales' },
+  { id: 'team-2', name: 'Sales Team B', managerId: 'user-8', memberIds: ['user-8', 'user-6', 'user-7'], description: 'SMB Sales' },
 ];
 
 // ============ USERS ============
@@ -185,6 +200,18 @@ export const mockUsers: User[] = [
     permissions: ROLE_PERMISSIONS.sale,
     isActive: true,
     avatar: '🧑‍💼',
+  },
+  {
+    id: 'user-8',
+    username: 'supervisor',
+    fullName: 'Nguyễn Văn Supervisor',
+    email: 'supervisor@company.com',
+    role: 'supervisor',
+    departmentId: 'dept-1',
+    teamId: 'team-2',
+    permissions: ROLE_PERMISSIONS.supervisor,
+    isActive: true,
+    avatar: '👨‍✈️',
   },
 ];
 
@@ -515,4 +542,5 @@ export const TEST_CREDENTIALS = {
   sale: { username: 'sale1', password: 'sale123' },
   hr_manager: { username: 'hr_manager', password: 'hr123' },
   hr_staff: { username: 'hr_staff', password: 'hr123' },
+  supervisor: { username: 'supervisor', password: 'sup123' },
 };
