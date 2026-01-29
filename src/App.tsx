@@ -6,6 +6,7 @@ import "dayjs/locale/vi";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/guards/ProtectedRoute";
 import MainLayout from "./components/layout/MainLayout";
+import UserProfile from "./pages/common/UserProfile";
 
 // Auth Pages
 import { LoginPage } from "./pages/auth/LoginPage";
@@ -65,6 +66,14 @@ const RootRedirect = () => {
   return <Navigate to="/access-denied" replace />;
 };
 
+const MyProfile = () => {
+  return (
+    <ProtectedRoute>
+      <UserProfile />
+    </ProtectedRoute>
+  );
+};
+
 function App() {
   return (
     <ConfigProvider
@@ -94,6 +103,9 @@ function App() {
             >
               {/* Smart Redirect based on role/permissions */}
               <Route index element={<RootRedirect />} />
+
+              {/* Profile Route */}
+              <Route path="profile" element={<MyProfile />} />
 
               {/* Admin Routes */}
               <Route

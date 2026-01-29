@@ -167,6 +167,8 @@ const MainLayout = () => {
     if (key === "logout") {
       logout();
       navigate("/login");
+    } else if (key === "profile") {
+      navigate("/profile");
     }
   };
 
@@ -174,7 +176,7 @@ const MainLayout = () => {
     {
       key: "profile",
       icon: <UserOutlined />,
-      label: "Hồ sơ của tôi",
+      label: "Xem hồ sơ cá nhân",
     },
     {
       key: "settings",
