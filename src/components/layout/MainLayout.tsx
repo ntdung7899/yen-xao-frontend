@@ -28,6 +28,7 @@ import {
   CrownOutlined,
   ClockCircleOutlined,
   DollarOutlined,
+  CalendarOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -102,6 +103,11 @@ const MainLayout = () => {
             key: "/crm/customers",
             icon: <TeamOutlined />,
             label: "Khách hàng",
+          },
+          {
+            key: "/crm/work-schedule",
+            icon: <CalendarOutlined />,
+            label: "Lịch làm việc",
           },
         ],
       });

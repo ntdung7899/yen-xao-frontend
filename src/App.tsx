@@ -24,6 +24,7 @@ import SalariesPage from "./pages/hr/SalariesPage";
 // CRM Pages
 import { CustomerList } from "./pages/crm/CustomerList";
 import { CustomerDetail } from "./pages/crm/CustomerDetail";
+import WorkSchedule from "./pages/crm/WorkSchedule";
 
 // Admin Pages
 import { AdminOverview } from "./pages/admin/AdminOverview";
@@ -145,6 +146,17 @@ function App() {
                     requireAll={false}
                   >
                     <CustomerDetail />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="crm/work-schedule"
+                element={
+                  <ProtectedRoute
+                    requiredPermissions={["crm:view_all_customers", "crm:view_own_customers"]} // Using base CRM permissions for now
+                    requireAll={false}
+                  >
+                    <WorkSchedule />
                   </ProtectedRoute>
                 }
               />
