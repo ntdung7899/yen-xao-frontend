@@ -30,6 +30,7 @@ import WorkSchedule from "./pages/crm/WorkSchedule";
 // Admin Pages
 import { AdminOverview } from "./pages/admin/AdminOverview";
 import { AuditLogPage } from "./pages/admin/AuditLogPage";
+import UserManagement from "./pages/admin/UserManagement";
 
 // E-commerce Pages
 import BannerList from "./pages/ecommerce/BannerList";
@@ -115,6 +116,14 @@ function App() {
                 element={
                   <ProtectedRoute requiredPermissions={["admin:view_all_data"]}>
                     <AdminOverview />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="admin/users"
+                element={
+                  <ProtectedRoute requiredPermissions={["admin:manage_users"]}>
+                    <UserManagement />
                   </ProtectedRoute>
                 }
               />

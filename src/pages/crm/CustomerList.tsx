@@ -30,7 +30,7 @@ import {
   RiseOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../../contexts/AuthContext';
-import { mockCustomers, mockUsers } from '../../data/mockAuthData';
+import { mockCustomers, mockUsers, mockTeams } from '../../data/mockAuthData';
 import { Customer } from '../../types/crm.types';
 import { PermissionGuard } from '../../components/guards/PermissionGuard';
 
@@ -43,6 +43,11 @@ export const CustomerList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
+
+  // Transfer Logic State
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [transferTargetId, setTransferTargetId] = useState<string | null>(null);
+  const [customerToTransfer, setCustomerToTransfer] = useState<Customer | null>(null);
 
   // Filter customers based on role
   const visibleCustomers = useMemo(() => {
@@ -87,6 +92,55 @@ export const CustomerList: React.FC = () => {
     return filtered;
   }, [customers, user, searchTerm, statusFilter, priorityFilter, hasPermission]);
 
+  // Group users by team for the transfer select
+  const usersByTeam = useMemo(() => {
+    const teams_map: Record<string, typeof mockUsers> = {};
+    const noTeamUsers: typeof mockUsers = [];
+
+    // Initialize teams
+    mockTeams.forEach(team => {
+      teams_map[team.id] = [];
+    });
+
+    mockUsers.forEach(u => {
+      // Show users who can own customers (sale, supervisor, crm_manager) and are not the current owner
+      // Note: Exclusion of current owner happens at render time or selection time
+      if (['sale', 'supervisor', 'crm_manager'].includes(u.role)) {
+        if (u.teamId && teams_map[u.teamId]) {
+          teams_map[u.teamId].push(u);
+        } else {
+          noTeamUsers.push(u);
+        }
+      }
+    });
+
+    return { teams_map, noTeamUsers };
+  }, []);
+
+  const handleTransferClick = (customer: Customer) => {
+    setCustomerToTransfer(customer);
+    setTransferTargetId(null);
+    setIsTransferModalOpen(true);
+  };
+
+  const handleTransferConfirm = () => {
+    if (!customerToTransfer || !transferTargetId) return;
+
+    const targetUser = mockUsers.find(u => u.id === transferTargetId);
+    if (!targetUser) return;
+
+    const updatedCustomers = customers.map((c) =>
+      c.id === customerToTransfer.id
+        ? { ...c, assignedTo: targetUser.id, assignedToName: targetUser.fullName }
+        : c
+    );
+    setCustomers(updatedCustomers);
+    message.success(`Đã chuyển khách hàng "${customerToTransfer.name}" cho ${targetUser.fullName}`);
+    setIsTransferModalOpen(false);
+    setCustomerToTransfer(null);
+    setTransferTargetId(null);
+  };
+
   // Calculate statistics
   const stats = useMemo(() => {
     return {
@@ -96,27 +150,6 @@ export const CustomerList: React.FC = () => {
       totalValue: visibleCustomers.reduce((sum, c) => sum + c.totalValue, 0),
     };
   }, [visibleCustomers]);
-
-  const handleTransfer = (customer: Customer) => {
-    const targetUser = mockUsers.find((u) => u.role === 'sale' && u.id !== customer.assignedTo);
-    if (targetUser) {
-      Modal.confirm({
-        title: 'Xác nhận chuyển khách hàng',
-        content: `Bạn có chắc chắn muốn chuyển khách hàng "${customer.name}" cho ${targetUser.fullName}?`,
-        okText: 'Chuyển',
-        cancelText: 'Hủy',
-        onOk: () => {
-          const updatedCustomers = customers.map((c) =>
-            c.id === customer.id
-              ? { ...c, assignedTo: targetUser.id, assignedToName: targetUser.fullName }
-              : c
-          );
-          setCustomers(updatedCustomers);
-          message.success(`Đã chuyển khách hàng "${customer.name}" cho ${targetUser.fullName}`);
-        },
-      });
-    }
-  };
 
   const getStatusColor = (status: string): string => {
     const colors: Record<string, string> = {
@@ -257,7 +290,7 @@ export const CustomerList: React.FC = () => {
               <Button
                 type="link"
                 icon={<SwapOutlined />}
-                onClick={() => handleTransfer(record)}
+                onClick={() => handleTransferClick(record)}
               >
                 Chuyển
               </Button>
@@ -400,6 +433,52 @@ export const CustomerList: React.FC = () => {
           }}
         />
       </Card>
+
+      {/* Transfer Modal */}
+      <Modal
+        title="Chuyển khách hàng"
+        open={isTransferModalOpen}
+        onOk={handleTransferConfirm}
+        onCancel={() => setIsTransferModalOpen(false)}
+        okText="Chuyển"
+        cancelText="Hủy"
+        okButtonProps={{ disabled: !transferTargetId }}
+      >
+        <p>Chọn nhân viên mới để phụ trách khách hàng <strong>{customerToTransfer?.name}</strong>:</p>
+        <Select
+          style={{ width: '100%' }}
+          placeholder="Chọn nhân viên"
+          value={transferTargetId}
+          onChange={setTransferTargetId}
+          showSearch
+          optionFilterProp="children"
+        >
+          {mockTeams.map(team => (
+            usersByTeam.teams_map[team.id]?.length > 0 && (
+              <Select.OptGroup key={team.id} label={team.name}>
+                {usersByTeam.teams_map[team.id]
+                  .filter(u => u.id !== customerToTransfer?.assignedTo)
+                  .map(u => (
+                    <Select.Option key={u.id} value={u.id}>
+                      {u.fullName} ({u.username})
+                    </Select.Option>
+                  ))}
+              </Select.OptGroup>
+            )
+          ))}
+          {usersByTeam.noTeamUsers.length > 0 && (
+            <Select.OptGroup label="Khác">
+              {usersByTeam.noTeamUsers
+                .filter(u => u.id !== customerToTransfer?.assignedTo)
+                .map(u => (
+                  <Select.Option key={u.id} value={u.id}>
+                    {u.fullName} ({u.username})
+                  </Select.Option>
+                ))}
+            </Select.OptGroup>
+          )}
+        </Select>
+      </Modal>
     </div>
   );
 };

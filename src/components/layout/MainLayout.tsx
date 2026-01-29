@@ -83,6 +83,11 @@ const MainLayout = () => {
             icon: <FileTextOutlined />,
             label: "Audit Log",
           },
+          hasPermission("admin:manage_users") && {
+            key: "/admin/users",
+            icon: <TeamOutlined />,
+            label: "Quản lý người dùng",
+          },
         ].filter(Boolean) as MenuProps["items"],
       });
     }

@@ -14,6 +14,10 @@ import {
   Row,
   Col,
   Tooltip,
+  Form,
+  DatePicker,
+  Radio,
+  InputNumber
 } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import {
@@ -49,8 +53,26 @@ import {
   PAGE_SIZE_OPTIONS,
   DEFAULT_PAGE_SIZE,
 } from "@/constants/hr.constants";
+import dayjs from "dayjs";
 
 const { Search } = Input;
+const { Option } = Select;
+
+interface EmployeeFormValues {
+  employeeCode: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  gender: "male" | "female" | "other";
+  dateOfBirth: any;
+  joinDate: any;
+  departmentId: string;
+  positionId: string;
+  baseSalary: number;
+  status: "active" | "inactive" | "resigned";
+  address?: string;
+  avatar?: string;
+}
 
 const EmployeeList = () => {
   const navigate = useNavigate();
@@ -69,37 +91,20 @@ const EmployeeList = () => {
     pageSizeOptions: PAGE_SIZE_OPTIONS,
   });
 
-  // Initial data loading with permission check
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [form] = Form.useForm();
+
+  // Data
   const [employees, setEmployees] = useState<Employee[]>([]);
 
   useEffect(() => {
     if (hasPermission("hr:view_all_employees")) {
       setEmployees(mockEmployees);
     } else if (hasPermission("hr:view_team_employees")) {
-      // Find team members
-      // In a real app, we would query by teamId. 
-      // Here we assume 'departmentId' or we need to look up mockUsers to see who is in the team.
-      // But mockEmployees doesn't have teamId directly, only mockUsers has.
-      // We need to map mockEmployees to mockUsers to check team.
-      // Actually mockAuthData has mockTeams.
-      // Let's assume for this mock that if user has teamId, we filter employees in that team.
-      // Employees in mockEmployees are linked to users potentially. 
-      // Let's filter by department for now if team is not available on Employee type, 
-      // OR better, checking mockUsers for list of IDs in the team.
-
-      // Let's look at mockUsers to find IDs of people in the same team
       const currentUser = mockUsers.find(u => u.id === user?.id);
       if (currentUser?.teamId) {
-        /*
-        import { mockTeams } from "@/data/mockAuthData"; // We need to import this
-        const myTeam = mockTeams.find(t => t.id === currentUser.teamId);
-        if (myTeam) {
-             const teamMemberIds = myTeam.memberIds;
-             setEmployees(mockEmployees.filter(e => teamMemberIds.includes(e.id)));
-        }
-        */
-        // Since I cannot easily import mockTeams here without adding import, 
-        // I will rely on finding users who match equality of teamId with current user.
         const teamMemberIds = mockUsers
           .filter(u => u.teamId === currentUser.teamId)
           .map(u => u.id);
@@ -111,7 +116,7 @@ const EmployeeList = () => {
     } else if (hasPermission("hr:view_department_employees")) {
       setEmployees(mockEmployees.filter(e => e.departmentId === user?.departmentId));
     } else {
-      setEmployees([]);
+      setEmployees([]); // Or handle no permission more gracefully
     }
   }, [user, hasPermission]);
 
@@ -128,39 +133,103 @@ const EmployeeList = () => {
         emp.phone.includes(searchText);
 
       // Department filter
-      const matchDepartment =
-        selectedDepartments.length === 0 ||
-        selectedDepartments.includes(emp.departmentId);
+      const matchDepartment = selectedDepartments.length === 0 || selectedDepartments.includes(emp.departmentId);
+      const matchPosition = selectedPositions.length === 0 || selectedPositions.includes(emp.positionId);
+      const matchStatus = selectedStatus.length === 0 || selectedStatus.includes(emp.status);
+      const matchGender = selectedGender.length === 0 || selectedGender.includes(emp.gender);
 
-      // Position filter
-      const matchPosition =
-        selectedPositions.length === 0 ||
-        selectedPositions.includes(emp.positionId);
-
-      // Status filter
-      const matchStatus =
-        selectedStatus.length === 0 || selectedStatus.includes(emp.status);
-
-      // Gender filter
-      const matchGender =
-        selectedGender.length === 0 || selectedGender.includes(emp.gender);
-
-      return (
-        matchSearch &&
-        matchDepartment &&
-        matchPosition &&
-        matchStatus &&
-        matchGender
-      );
+      return matchSearch && matchDepartment && matchPosition && matchStatus && matchGender;
     });
-  }, [
-    employees,
-    searchText,
-    selectedDepartments,
-    selectedPositions,
-    selectedStatus,
-    selectedGender,
-  ]);
+  }, [employees, searchText, selectedDepartments, selectedPositions, selectedStatus, selectedGender]);
+
+  // CRUD Handlers
+  const handleAdd = () => {
+    setEditingEmployee(null);
+    form.resetFields();
+    // Set default values
+    form.setFieldsValue({
+      status: 'active',
+      gender: 'male',
+      joinDate: dayjs(),
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = (employee: Employee) => {
+    setEditingEmployee(employee);
+    form.setFieldsValue({
+      ...employee,
+      dateOfBirth: employee.dateOfBirth ? dayjs(employee.dateOfBirth) : null,
+      joinDate: employee.joinDate ? dayjs(employee.joinDate) : null,
+      resignDate: employee.resignDate ? dayjs(employee.resignDate) : null,
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (employee: Employee) => {
+    Modal.confirm({
+      title: "Xác nhận xóa",
+      content: `Bạn có chắc muốn xóa nhân viên ${employee.fullName}? Hành động này không thể hoàn tác.`,
+      okText: "Xóa",
+      okType: "danger",
+      cancelText: "Hủy",
+      onOk: () => {
+        setEmployees(employees.filter((emp) => emp.id !== employee.id));
+        message.success("Xóa nhân viên thành công");
+      },
+    });
+  };
+
+  const handleModalOk = () => {
+    form.validateFields().then((values: EmployeeFormValues) => {
+      const formattedValues = {
+        ...values,
+        dateOfBirth: values.dateOfBirth?.format('YYYY-MM-DD'),
+        joinDate: values.joinDate?.format('YYYY-MM-DD'),
+      };
+
+      if (editingEmployee) {
+        // Update
+        const updatedEmployees = employees.map(emp =>
+          emp.id === editingEmployee.id ? { ...emp, ...formattedValues } : emp
+        );
+        setEmployees(updatedEmployees);
+        message.success("Cập nhật thông tin nhân viên thành công");
+      } else {
+        // Create
+        const newEmployee: Employee = {
+          id: `emp-${Date.now()}`,
+          ...formattedValues,
+        } as Employee;
+        setEmployees([...employees, newEmployee]);
+        message.success("Thêm nhân viên mới thành công");
+      }
+      setIsModalOpen(false);
+    });
+  };
+
+  // Other Handlers
+  const handleSearch = (value: string) => {
+    setSearchText(value);
+    setPagination({ ...pagination, current: 1 });
+  };
+
+  const handleClearFilters = () => {
+    setSearchText("");
+    setSelectedDepartments([]);
+    setSelectedPositions([]);
+    setSelectedStatus([]);
+    setSelectedGender([]);
+    setPagination({ ...pagination, current: 1 });
+  };
+
+  const handleTableChange = (newPagination: TablePaginationConfig) => {
+    setPagination(newPagination);
+  };
+
+  const handleExport = () => {
+    message.info("Tính năng xuất Excel đang được phát triển");
+  };
 
   // Table columns
   const columns: ColumnsType<Employee> = [
@@ -181,11 +250,7 @@ const EmployeeList = () => {
       sorter: (a, b) => a.fullName.localeCompare(b.fullName),
       render: (text: string) => (
         <Space>
-          <Avatar
-            size="small"
-            style={{ backgroundColor: "#1677ff" }}
-            icon={<UserOutlined />}
-          >
+          <Avatar size="small" style={{ backgroundColor: "#1677ff" }} icon={<UserOutlined />}>
             {text.charAt(0)}
           </Avatar>
           <span>{text}</span>
@@ -266,69 +331,31 @@ const EmployeeList = () => {
               onClick={() => navigate(`/hr/employees/${record.id}`)}
             />
           </Tooltip>
-          <Tooltip title="Chỉnh sửa">
-            <Button
-              type="text"
-              size="small"
-              icon={<EditOutlined />}
-              onClick={() => handleEdit(record)}
-            />
-          </Tooltip>
-          <Tooltip title="Xóa">
-            <Button
-              type="text"
-              size="small"
-              danger
-              icon={<DeleteOutlined />}
-              onClick={() => handleDelete(record)}
-            />
-          </Tooltip>
+          {hasPermission("hr:edit_employee") && (
+            <Tooltip title="Chỉnh sửa">
+              <Button
+                type="text"
+                size="small"
+                icon={<EditOutlined />}
+                onClick={() => handleEdit(record)}
+              />
+            </Tooltip>
+          )}
+          {hasPermission("hr:delete_employee") && (
+            <Tooltip title="Xóa">
+              <Button
+                type="text"
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+                onClick={() => handleDelete(record)}
+              />
+            </Tooltip>
+          )}
         </Space>
       ),
     },
   ];
-
-  // Handlers
-  const handleSearch = (value: string) => {
-    setSearchText(value);
-    setPagination({ ...pagination, current: 1 });
-  };
-
-  const handleEdit = (employee: Employee) => {
-    // TODO: Open edit modal
-    message.info(`Chỉnh sửa nhân viên: ${employee.fullName}`);
-  };
-
-  const handleDelete = (employee: Employee) => {
-    Modal.confirm({
-      title: "Xác nhận xóa",
-      content: `Bạn có chắc muốn xóa nhân viên ${employee.fullName}? Hành động này không thể hoàn tác.`,
-      okText: "Xóa",
-      okType: "danger",
-      cancelText: "Hủy",
-      onOk: () => {
-        setEmployees(employees.filter((emp) => emp.id !== employee.id));
-        message.success("Xóa nhân viên thành công");
-      },
-    });
-  };
-
-  const handleClearFilters = () => {
-    setSearchText("");
-    setSelectedDepartments([]);
-    setSelectedPositions([]);
-    setSelectedStatus([]);
-    setSelectedGender([]);
-    setPagination({ ...pagination, current: 1 });
-  };
-
-  const handleTableChange = (newPagination: TablePaginationConfig) => {
-    setPagination(newPagination);
-  };
-
-  const handleExport = () => {
-    message.info("Tính năng xuất Excel đang được phát triển");
-  };
 
   return (
     <div>
@@ -336,20 +363,14 @@ const EmployeeList = () => {
       <div style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h2 style={{ margin: 0, fontSize: 24 }}>Quản lý nhân viên</h2>
         <Space>
-          <Button
-            type="default"
-            icon={<ExportOutlined />}
-            onClick={handleExport}
-          >
+          <Button type="default" icon={<ExportOutlined />} onClick={handleExport}>
             Xuất Excel
           </Button>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => navigate("/hr/employees/new")}
-          >
-            Thêm nhân viên
-          </Button>
+          {hasPermission("hr:create_employee") && (
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+              Thêm nhân viên
+            </Button>
+          )}
         </Space>
       </div>
 
@@ -372,10 +393,7 @@ const EmployeeList = () => {
               style={{ width: "100%" }}
               value={selectedDepartments}
               onChange={setSelectedDepartments}
-              options={mockDepartments.map((dept) => ({
-                label: dept.name,
-                value: dept.id,
-              }))}
+              options={mockDepartments.map((dept) => ({ label: dept.name, value: dept.id }))}
               maxTagCount="responsive"
             />
           </Col>
@@ -386,10 +404,7 @@ const EmployeeList = () => {
               style={{ width: "100%" }}
               value={selectedPositions}
               onChange={setSelectedPositions}
-              options={mockPositions.map((pos) => ({
-                label: pos.name,
-                value: pos.id,
-              }))}
+              options={mockPositions.map((pos) => ({ label: pos.name, value: pos.id }))}
               maxTagCount="responsive"
             />
           </Col>
@@ -404,23 +419,8 @@ const EmployeeList = () => {
               maxTagCount="responsive"
             />
           </Col>
-          <Col xs={24} sm={12} md={6} lg={4}>
-            <Select
-              mode="multiple"
-              placeholder="Giới tính"
-              style={{ width: "100%" }}
-              value={selectedGender}
-              onChange={setSelectedGender}
-              options={GENDER_OPTIONS}
-              maxTagCount="responsive"
-            />
-          </Col>
           <Col xs={24} sm={12} md={6} lg={2}>
-            <Button
-              block
-              icon={<FilterOutlined />}
-              onClick={handleClearFilters}
-            >
+            <Button block icon={<FilterOutlined />} onClick={handleClearFilters}>
               Xóa bộ lọc
             </Button>
           </Col>
@@ -438,6 +438,156 @@ const EmployeeList = () => {
         scroll={{ x: 1500 }}
         size="middle"
       />
+
+      {/* Create/Edit Modal */}
+      <Modal
+        title={editingEmployee ? "Chỉnh sửa nhân viên" : "Thêm nhân viên mới"}
+        open={isModalOpen}
+        onOk={handleModalOk}
+        onCancel={() => setIsModalOpen(false)}
+        width={800}
+      >
+        <Form form={form} layout="vertical">
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="fullName"
+                label="Họ và tên"
+                rules={[{ required: true, message: "Vui lòng nhập họ tên" }]}
+              >
+                <Input placeholder="Nhập họ và tên" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="employeeCode"
+                label="Mã nhân viên"
+                rules={[{ required: true, message: "Vui lòng nhập mã nhân viên" }]}
+              >
+                <Input placeholder="EMP001" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="email"
+                label="Email"
+                rules={[{ required: true, type: 'email', message: "Email không hợp lệ" }]}
+              >
+                <Input placeholder="example@company.com" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="phone"
+                label="Số điện thoại"
+                rules={[{ required: true, message: "Vui lòng nhập số điện thoại" }]}
+              >
+                <Input placeholder="0901234567" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="dateOfBirth"
+                label="Ngày sinh"
+                rules={[{ required: true, message: "Vui lòng chọn ngày sinh" }]}
+              >
+                <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" placeholder="Chọn ngày sinh" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="gender"
+                label="Giới tính"
+                rules={[{ required: true, message: "Vui lòng chọn giới tính" }]}
+              >
+                <Select placeholder="Chọn giới tính">
+                  {GENDER_OPTIONS.map(opt => (
+                    <Option key={opt.value} value={opt.value}>{opt.label}</Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="departmentId"
+                label="Phòng ban"
+                rules={[{ required: true, message: "Vui lòng chọn phòng ban" }]}
+              >
+                <Select placeholder="Chọn phòng ban">
+                  {mockDepartments.map(d => (
+                    <Option key={d.id} value={d.id}>{d.name}</Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="positionId"
+                label="Chức vụ"
+                rules={[{ required: true, message: "Vui lòng chọn chức vụ" }]}
+              >
+                <Select placeholder="Chọn chức vụ">
+                  {mockPositions.map(p => (
+                    <Option key={p.id} value={p.id}>{p.name}</Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="baseSalary"
+                label="Lương cơ bản"
+                rules={[{ required: true, message: "Vui lòng nhập lương cơ bản" }]}
+              >
+                <InputNumber
+                  style={{ width: '100%' }}
+                  formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                  parser={(value) => value!.replace(/\$\s?|(,*)/g, '')}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="joinDate"
+                label="Ngày vào làm"
+                rules={[{ required: true, message: "Vui lòng chọn ngày vào làm" }]}
+              >
+                <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item
+            name="status"
+            label="Trạng thái"
+          >
+            <Radio.Group>
+              {STATUS_OPTIONS.map(opt => (
+                <Radio key={opt.value} value={opt.value}>{opt.label}</Radio>
+              ))}
+            </Radio.Group>
+          </Form.Item>
+
+          <Form.Item
+            name="address"
+            label="Địa chỉ"
+          >
+            <Input.TextArea rows={2} placeholder="Nhập địa chỉ liên hệ" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
