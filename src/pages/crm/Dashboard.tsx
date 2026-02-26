@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Row, Col, Card, Statistic, Typography } from "antd";
 import {
     TeamOutlined,
@@ -25,59 +26,61 @@ import { mockCustomers, mockUsers, mockDepartments } from "@/data/mockAuthData";
 
 const { Title } = Typography;
 
+// Hoisted constants — no re-creation on every render
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+
+const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
+    const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
+
+    return (
+        <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central">
+            {`${(percent * 100).toFixed(0)}%`}
+        </text>
+    );
+};
+
 const CRMDashboard = () => {
-    // Stats
-    const totalCustomers = mockCustomers.length;
-    const totalValue = mockCustomers.reduce((sum, c) => sum + (c.totalValue || 0), 0);
-    const totalLeads = mockCustomers.filter(c => c.status === 'lead').length;
-    const totalProspects = mockCustomers.filter(c => c.status === 'prospect').length;
-    const totalActiveCustomers = mockCustomers.filter(c => c.status === 'customer').length;
+    // Memoize all derived data to avoid recomputation on re-renders
+    const { totalCustomers, totalValue, totalLeads, totalActiveCustomers, pipelineData, deptData, regionData } = useMemo(() => {
+        const totalCustomers = mockCustomers.length;
+        const totalValue = mockCustomers.reduce((sum, c) => sum + (c.totalValue || 0), 0);
+        const totalLeads = mockCustomers.filter(c => c.status === 'lead').length;
+        const totalProspects = mockCustomers.filter(c => c.status === 'prospect').length;
+        const totalActiveCustomers = mockCustomers.filter(c => c.status === 'customer').length;
 
-    // Pipeline Data (Funnel)
-    const pipelineData = [
-        { name: "Lead", value: totalLeads, fill: "#1677ff" },
-        { name: "Prospect", value: totalProspects, fill: "#faad14" },
-        { name: "Customer", value: totalActiveCustomers, fill: "#52c41a" },
-    ];
+        const pipelineData = [
+            { name: "Lead", value: totalLeads, fill: "#1677ff" },
+            { name: "Prospect", value: totalProspects, fill: "#faad14" },
+            { name: "Customer", value: totalActiveCustomers, fill: "#52c41a" },
+        ];
 
-    // Customers by Department (Derived from Assignee)
-    // Map Department ID to Count
-    const deptCounts: Record<string, number> = {};
-    mockDepartments.forEach(d => deptCounts[d.id] = 0);
+        // Build user lookup map for O(1) access instead of O(n) find() per customer
+        const userMap = new Map(mockUsers.map(u => [u.id, u]));
 
-    mockCustomers.forEach(c => {
-        const assignee = mockUsers.find(u => u.id === c.assignedTo);
-        if (assignee?.departmentId) {
-            deptCounts[assignee.departmentId] = (deptCounts[assignee.departmentId] || 0) + 1;
-        }
-    });
+        const deptCounts: Record<string, number> = {};
+        mockDepartments.forEach(d => deptCounts[d.id] = 0);
 
-    const deptData = mockDepartments.map(d => ({
-        name: d.name,
-        count: deptCounts[d.id] || 0
-    })).filter(d => d.count > 0);
+        mockCustomers.forEach(c => {
+            const assignee = userMap.get(c.assignedTo);
+            if (assignee?.departmentId) {
+                deptCounts[assignee.departmentId] = (deptCounts[assignee.departmentId] || 0) + 1;
+            }
+        });
 
-    // Region Data (Mocking Regions based on Team or Random for visualization as requested "Khu vực")
-    // Since we don't have explicit Region in mock data, I will simulate it based on 'Team' if available or just hardcode some distribution for the sake of the requirement "Xem khách theo khu vực"
-    // Assuming Team 1 is North, Team 2 is South.
-    const regionData = [
-        { name: "Miền Bắc", value: mockCustomers.filter((_, i) => i % 2 === 0).length },
-        { name: "Miền Nam", value: mockCustomers.filter((_, i) => i % 2 !== 0).length },
-    ];
+        const deptData = mockDepartments.map(d => ({
+            name: d.name,
+            count: deptCounts[d.id] || 0
+        })).filter(d => d.count > 0);
 
-    const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
-        const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-        const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
-        const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
+        const regionData = [
+            { name: "Miền Bắc", value: mockCustomers.filter((_, i) => i % 2 === 0).length },
+            { name: "Miền Nam", value: mockCustomers.filter((_, i) => i % 2 !== 0).length },
+        ];
 
-        return (
-            <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central">
-                {`${(percent * 100).toFixed(0)}%`}
-            </text>
-        );
-    };
-
-    const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+        return { totalCustomers, totalValue, totalLeads, totalActiveCustomers, pipelineData, deptData, regionData };
+    }, []);
 
     return (
         <div>
